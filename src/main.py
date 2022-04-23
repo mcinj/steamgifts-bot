@@ -143,15 +143,15 @@ class SteamGifts:
 
                 if self.points - int(game_cost) < 0:
                     txt = f"⛔ Not enough points to enter: {game_name}"
-                    logger.info(txt)
+                    logger.debug(txt)
                     continue
-                if self.max_time_left > game_remaining_in_minutes:
-                    txt = f"Game {game_name} has {game_remaining_in_minutes} left and is above your cutoff of {self.max_time_left} minutes."
-                    logger.info(txt)
+                if game_remaining_in_minutes > self.max_time_left:
+                    txt = f"Game {game_name} has {game_remaining_in_minutes} minutes left and is above your cutoff of {self.max_time_left} minutes."
+                    logger.debug(txt)
                     continue
-                if self.max_entries > game_entries:
+                if game_entries > self.max_entries:
                     txt = f"Game {game_name} has {game_entries} entries is above your cutoff of {self.max_entries} entries."
-                    logger.info(txt)
+                    logger.debug(txt)
                     continue
                 # defensive move
                 if self.points - int(game_cost) >= 0:
