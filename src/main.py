@@ -102,7 +102,9 @@ class SteamGifts:
 
             soup = self.get_soup_from_page(paginated_url)
 
-            game_list = soup.find_all('div', {'class': 'giveaway__row-inner-wrap'})
+            # this matches on a div with the exact class value so we discard ones that also have a class 'is-faded' containing already entered giveaways
+            game_list = soup.select('div[class=giveaway__row-inner-wrap]')
+            # game_list = soup.find_all('div', {'class': 'giveaway__row-inner-wrap'})
 
             if not len(game_list):
                 random_seconds = randint(900, 1400)
