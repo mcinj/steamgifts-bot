@@ -74,7 +74,7 @@ class SteamGifts:
         if not string_time:
             logger.error(f"Could not determine time from string {string_time}")
             return None
-        match = re.search('(?P<number>[0-9]+) (?P<time_unit>(hour|day|minute|second))', string_time)
+        match = re.search('(?P<number>[0-9]+) (?P<time_unit>(hour|day|minute|second|week))', string_time)
         if match:
             number = int(match.group('number'))
             time_unit = match.group('time_unit')
@@ -86,7 +86,10 @@ class SteamGifts:
                 return number
             elif time_unit == 'second':
                 return 1
+            elif time_unit == 'week':
+                return number * 7 * 24 * 60
             else:
+                logger.error(f"Unkown time unit displayed in giveaway: {string_time}")
                 return None
         else:
             return None
@@ -136,8 +139,12 @@ class SteamGifts:
                 times = item.select('div span[data-timestamp]')
                 game_remaining = times[0].text
                 game_remaining_in_minutes = self.determine_time_in_minutes(game_remaining)
+                if game_remaining_in_minutes is None:
+                    continue
                 game_created = times[1].text
                 game_created_in_minutes = self.determine_time_in_minutes(game_created)
+                if game_created_in_minutes is None:
+                    continue
                 game_entries = int(item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',' ,''))
 
                 txt = f"{game_name} {game_cost} - {game_entries} - Created {game_created} ago with {game_remaining} remaining."
