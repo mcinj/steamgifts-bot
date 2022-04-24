@@ -12,6 +12,7 @@ import log
 
 logger = log.get_logger(__name__)
 
+
 class SteamGifts:
     def __init__(self, cookie, gifts_type, pinned, min_points, max_entries, max_time_left, minimum_game_points):
         self.cookie = {
@@ -96,6 +97,82 @@ class SteamGifts:
         else:
             return None
 
+    def determine_cost_and_copies(self, item, game_name, game_id):
+        item_headers = item.find_all('span', {'class': 'giveaway__heading__thin'})
+        if len(item_headers) == 1:  # then no multiple copies
+            game_cost = item_headers[0].getText().replace('(', '').replace(')', '').replace('P', '')
+            if not re.search('^[0-9]+$', game_cost):
+                txt = f"Unable to determine cost of {game_name} with id {game_id}. Cost string: {item_headers[0]}"
+                logger.error(txt)
+                return None, None
+            game_cost = int(game_cost)
+            return game_cost, 1
+        elif len(item_headers) == 2:  # then multiple copies
+            game_cost = item_headers[1].getText().replace('(', '').replace(')', '').replace('P', '')
+            if not re.search('^[0-9]+$', game_cost):
+                txt = f"Unable to determine cost of {game_name} with id {game_id}. Cost string: {item_headers[1].getText()}"
+                logger.error(txt)
+                return None, None
+            game_cost = int(game_cost)
+
+            match = re.search('(?P<copies>[0-9]+) Copies', item_headers[0].getText(), re.IGNORECASE)
+            if match:
+                num_copies_str = match.group('copies')
+                num_copies = int(num_copies_str)
+                return game_cost, num_copies
+            else:
+                txt = f"It appears there are multiple copies of {game_name} with id {game_id}, but we could not " \
+                      f"determine that. Copy string: {item_headers[0].getText()}"
+                logger.error(txt)
+                return game_cost, None
+        else:
+            txt = f"Unable to determine cost or num copies of {game_name} with id {game_id}."
+            logger.error(txt)
+            return None, None
+
+    def should_we_enter_giveaway(self, item, game_name, game_cost, copies):
+        times = item.select('div span[data-timestamp]')
+        game_remaining = times[0].text
+        game_remaining_in_minutes = self.determine_time_in_minutes(game_remaining)
+        if game_remaining_in_minutes is None:
+            return False
+        game_created = times[1].text
+        game_created_in_minutes = self.determine_time_in_minutes(game_created)
+        if game_created_in_minutes is None:
+            return False
+        game_entries = int(item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
+
+        txt = f"{game_name} - {game_cost}P - {game_entries} entries (w/ {copies} copies) - " \
+              f"Created {game_created} ago with {game_remaining} remaining."
+        logger.debug(txt)
+
+        if self.points - int(game_cost) < 0:
+            txt = f"⛔ Not enough points to enter: {game_name}"
+            logger.debug(txt)
+            return False
+        if game_cost < self.minimum_game_points:
+            txt = f"Game {game_name} costs {game_cost}P and is below your cutoff of {self.minimum_game_points}P."
+            logger.debug(txt)
+            return False
+        if game_remaining_in_minutes > self.max_time_left:
+            txt = f"Game {game_name} has {game_remaining_in_minutes} minutes left and is above your cutoff of {self.max_time_left} minutes."
+            logger.debug(txt)
+            return False
+        if game_entries / copies > self.max_entries:
+            txt = f"Game {game_name} has {game_entries} entries and is above your cutoff of {self.max_entries} entries."
+            logger.debug(txt)
+            return False
+
+        return True
+
+    def enter_giveaway(self, game_id):
+        payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': game_id}
+        entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie)
+        json_data = json.loads(entry.text)
+
+        if json_data['type'] == 'success':
+            return True
+
     def get_game_content(self, page=1):
         n = page
         while True:
@@ -133,13 +210,12 @@ class SteamGifts:
 
                 game_name = item.find('a', {'class': 'giveaway__heading__name'}).text
                 game_id = item.find('a', {'class': 'giveaway__heading__name'})['href'].split('/')[2]
-                game_cost = item.find_all('span', {'class': 'giveaway__heading__thin'})[-1]
-                if game_cost:
-                    game_cost = game_cost.getText().replace('(', '').replace(')', '').replace('P', '')
-                    game_cost = int(game_cost)
-                else:
+
+                game_cost, copies = self.determine_cost_and_copies(item, game_name, game_id)
+
+                if not game_cost:
                     continue
-                if_enter_giveaway = self.should_we_enter_giveaway(item, game_name, game_cost)
+                if_enter_giveaway = self.should_we_enter_giveaway(item, game_name, game_cost, copies)
 
                 if if_enter_giveaway:
                     res = self.enter_giveaway(game_id)
@@ -156,48 +232,6 @@ class SteamGifts:
         logger.info("🛋️  List of games is ended. Waiting 2 mins to update...")
         sleep(120)
         self.start()
-
-    def should_we_enter_giveaway(self, item, game_name, game_cost):
-        times = item.select('div span[data-timestamp]')
-        game_remaining = times[0].text
-        game_remaining_in_minutes = self.determine_time_in_minutes(game_remaining)
-        if game_remaining_in_minutes is None:
-            return False
-        game_created = times[1].text
-        game_created_in_minutes = self.determine_time_in_minutes(game_created)
-        if game_created_in_minutes is None:
-            return False
-        game_entries = int(item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
-
-        txt = f"{game_name} - {game_cost}P - {game_entries} entries - Created {game_created} ago with {game_remaining} remaining."
-        logger.debug(txt)
-
-        if self.points - int(game_cost) < 0:
-            txt = f"⛔ Not enough points to enter: {game_name}"
-            logger.debug(txt)
-            return False
-        if game_cost < self.minimum_game_points:
-            txt = f"Game {game_name} costs {game_cost}P and is below your cutoff of {self.minimum_game_points}P."
-            logger.debug(txt)
-            return False
-        if game_remaining_in_minutes > self.max_time_left:
-            txt = f"Game {game_name} has {game_remaining_in_minutes} minutes left and is above your cutoff of {self.max_time_left} minutes."
-            logger.debug(txt)
-            return False
-        if game_entries > self.max_entries:
-            txt = f"Game {game_name} has {game_entries} entries and is above your cutoff of {self.max_entries} entries."
-            logger.debug(txt)
-            return False
-
-        return True
-
-    def enter_giveaway(self, game_id):
-        payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': game_id}
-        entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie)
-        json_data = json.loads(entry.text)
-
-        if json_data['type'] == 'success':
-            return True
 
     def start(self):
         self.update_info()
