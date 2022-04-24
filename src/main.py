@@ -173,9 +173,10 @@ class SteamGifts:
         if json_data['type'] == 'success':
             return True
 
-    def get_game_content(self, page=1):
+    def evaluate_giveaways(self, page=1):
         n = page
-        while True:
+        run = True
+        while run:
             txt = "⚙️  Retrieving games from %d page." % n
             logger.info(txt)
 
@@ -189,23 +190,19 @@ class SteamGifts:
             # game_list = soup.find_all('div', {'class': 'giveaway__row-inner-wrap'})
 
             if not len(game_list):
-                random_seconds = randint(900, 1400)
-                txt = f"We have run out of gifts to consider. Trying again in {random_seconds} seconds."
+                txt = f"We have run out of gifts to consider."
                 logger.info(txt)
-                sleep(random_seconds)
-                self.start()
-                continue
+                run = False
+                break
 
             for item in game_list:
                 if len(item.get('lass', [])) == 2 and not self.pinned:
                     continue
 
                 if self.points == 0 or self.points < self.min_points:
-                    random_seconds = randint(900, 1400)
-                    txt = f"🛋️  Sleeping {random_seconds} seconds to get more points. We have {self.points} points, but we need {self.min_points} to start."
+                    txt = f"🛋️  We have {self.points} points, but we need {self.min_points} to start."
                     logger.info(txt)
-                    sleep(random_seconds)
-                    self.start()
+                    run = False
                     break
 
                 game_name = item.find('a', {'class': 'giveaway__heading__name'}).text
@@ -226,12 +223,7 @@ class SteamGifts:
                         sleep(randint(4, 15))
                 else:
                     continue
-
-            n = n+1
-
-        logger.info("🛋️  List of games is ended. Waiting 2 mins to update...")
-        sleep(120)
-        self.start()
+        n = n + 1
 
     def start(self):
         self.update_info()
@@ -239,11 +231,15 @@ class SteamGifts:
         if self.points >= self.min_points:
             txt = "🤖 You have %d points. Evaluating giveaways..." % self.points
             logger.info(txt)
-            self.get_game_content()
         else:
             random_seconds = randint(900, 1400)
             txt = f"You have {self.points} points which is below your minimum point threshold of {self.min_points} points. Sleeping for {random_seconds} seconds."
             logger.info(txt)
             sleep(random_seconds)
-            self.get_game_content()
+
+        while True:
+            self.evaluate_giveaways()
+            random_seconds = randint(900, 1400)
+            logger.info(f"Going to sleep for {random_seconds} seconds.")
+            sleep(random_seconds)
 
