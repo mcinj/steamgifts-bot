@@ -29,7 +29,8 @@ class MyConfig(ConfigParser):
                 'pinned': ('true', 'false'),
                 'minimum_points': '%s' % (value_range(0,400)),
                 'max_entries': '%s' % (value_range(0,10000)),
-                'max_time_left': '%s' % (value_range(0,21600))
+                'max_time_left': '%s' % (value_range(0,21600)),
+                'minimum_game_points': '%s' % (value_range(0,50))
             }
         }
 
@@ -74,8 +75,9 @@ def run():
     minimum_points = config['DEFAULT'].getint('minimum_points')
     max_entries = config['DEFAULT'].getint('max_entries')
     max_time_left = config['DEFAULT'].getint('max_time_left')
+    minimum_game_points = config['DEFAULT'].getint('minimum_game_points')
 
-    s = SG(cookie, gift_types, pinned_games, minimum_points, max_entries, max_time_left)
+    s = SG(cookie, gift_types, pinned_games, minimum_points, max_entries, max_time_left, minimum_game_points)
     s.start()
 
 

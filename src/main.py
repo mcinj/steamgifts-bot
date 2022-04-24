@@ -13,7 +13,7 @@ import log
 logger = log.get_logger(__name__)
 
 class SteamGifts:
-    def __init__(self, cookie, gifts_type, pinned, min_points, max_entries, max_time_left):
+    def __init__(self, cookie, gifts_type, pinned, min_points, max_entries, max_time_left, minimum_game_points):
         self.cookie = {
             'PHPSESSID': cookie
         }
@@ -22,6 +22,7 @@ class SteamGifts:
         self.min_points = int(min_points)
         self.max_entries = int(max_entries)
         self.max_time_left = int(max_time_left)
+        self.minimum_game_points = int(minimum_game_points)
 
         self.base = "https://www.steamgifts.com"
         self.session = requests.Session()
@@ -70,6 +71,7 @@ class SteamGifts:
             sleep(10)
             exit()
 
+    # this isn't exact because 'a week' could mean 8 days or 'a day' could mean 27 hours
     def determine_time_in_minutes(self, string_time):
         if not string_time:
             logger.error(f"Could not determine time from string {string_time}")
@@ -89,7 +91,7 @@ class SteamGifts:
             elif time_unit == 'week':
                 return number * 7 * 24 * 60
             else:
-                logger.error(f"Unkown time unit displayed in giveaway: {string_time}")
+                logger.error(f"Unknown time unit displayed in giveaway: {string_time}")
                 return None
         else:
             return None
@@ -134,42 +136,20 @@ class SteamGifts:
                 game_cost = item.find_all('span', {'class': 'giveaway__heading__thin'})[-1]
                 if game_cost:
                     game_cost = game_cost.getText().replace('(', '').replace(')', '').replace('P', '')
+                    game_cost = int(game_cost)
                 else:
                     continue
-                times = item.select('div span[data-timestamp]')
-                game_remaining = times[0].text
-                game_remaining_in_minutes = self.determine_time_in_minutes(game_remaining)
-                if game_remaining_in_minutes is None:
-                    continue
-                game_created = times[1].text
-                game_created_in_minutes = self.determine_time_in_minutes(game_created)
-                if game_created_in_minutes is None:
-                    continue
-                game_entries = int(item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',' ,''))
+                if_enter_giveaway = self.should_we_enter_giveaway(item, game_name, game_cost)
 
-                txt = f"{game_name} {game_cost} - {game_entries} - Created {game_created} ago with {game_remaining} remaining."
-                logger.debug(txt)
-
-                if self.points - int(game_cost) < 0:
-                    txt = f"⛔ Not enough points to enter: {game_name}"
-                    logger.debug(txt)
-                    continue
-                if game_remaining_in_minutes > self.max_time_left:
-                    txt = f"Game {game_name} has {game_remaining_in_minutes} minutes left and is above your cutoff of {self.max_time_left} minutes."
-                    logger.debug(txt)
-                    continue
-                if game_entries > self.max_entries:
-                    txt = f"Game {game_name} has {game_entries} entries is above your cutoff of {self.max_entries} entries."
-                    logger.debug(txt)
-                    continue
-                # defensive move
-                if self.points - int(game_cost) >= 0:
-                    res = self.entry_gift(game_id)
+                if if_enter_giveaway:
+                    res = self.enter_giveaway(game_id)
                     if res:
                         self.points -= int(game_cost)
                         txt = f"🎉 One more game! Has just entered {game_name}"
                         logger.info(txt)
-                        sleep(randint(3, 7))
+                        sleep(randint(4, 15))
+                else:
+                    continue
 
             n = n+1
 
@@ -177,7 +157,41 @@ class SteamGifts:
         sleep(120)
         self.start()
 
-    def entry_gift(self, game_id):
+    def should_we_enter_giveaway(self, item, game_name, game_cost):
+        times = item.select('div span[data-timestamp]')
+        game_remaining = times[0].text
+        game_remaining_in_minutes = self.determine_time_in_minutes(game_remaining)
+        if game_remaining_in_minutes is None:
+            return False
+        game_created = times[1].text
+        game_created_in_minutes = self.determine_time_in_minutes(game_created)
+        if game_created_in_minutes is None:
+            return False
+        game_entries = int(item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
+
+        txt = f"{game_name} - {game_cost}P - {game_entries} entries - Created {game_created} ago with {game_remaining} remaining."
+        logger.debug(txt)
+
+        if self.points - int(game_cost) < 0:
+            txt = f"⛔ Not enough points to enter: {game_name}"
+            logger.debug(txt)
+            return False
+        if game_cost < self.minimum_game_points:
+            txt = f"Game {game_name} costs {game_cost}P and is below your cutoff of {self.minimum_game_points}P."
+            logger.debug(txt)
+            return False
+        if game_remaining_in_minutes > self.max_time_left:
+            txt = f"Game {game_name} has {game_remaining_in_minutes} minutes left and is above your cutoff of {self.max_time_left} minutes."
+            logger.debug(txt)
+            return False
+        if game_entries > self.max_entries:
+            txt = f"Game {game_name} has {game_entries} entries is above your cutoff of {self.max_entries} entries."
+            logger.debug(txt)
+            return False
+
+        return True
+
+    def enter_giveaway(self, game_id):
         payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': game_id}
         entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie)
         json_data = json.loads(entry.text)
@@ -188,8 +202,14 @@ class SteamGifts:
     def start(self):
         self.update_info()
 
-        if self.points > 0:
-            txt = "🤖 Hoho! I am back! You have %d points. Lets hack." % self.points
+        if self.points >= self.min_points:
+            txt = "🤖 You have %d points. Evaluating giveaways..." % self.points
             logger.info(txt)
+            self.get_game_content()
+        else:
+            random_seconds = randint(900, 1400)
+            txt = f"You have {self.points} points which is below your minimum point threshold of {self.min_points} points. Sleeping for {random_seconds} seconds."
+            logger.info(txt)
+            sleep(random_seconds)
+            self.get_game_content()
 
-        self.get_game_content()

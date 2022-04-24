@@ -3,3 +3,4 @@ env/
 __pycache__/
 .idea
 config/config.ini
+src/debug.log

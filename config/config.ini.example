@@ -9,3 +9,5 @@ minimum_points = 50
 max_entries = 900
 # time left in minutes of a giveaway for it to be considered
 max_time_left = 180
+# the minimum point value for a giveaway to be considered
+minimum_game_points = 5
