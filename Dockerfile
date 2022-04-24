@@ -6,7 +6,7 @@ WORKDIR /app
 # resolves gcc issue with installing regex dependency
 RUN apk add build-base tzdata --no-cache
 
-ENV TZ=Africa/New_York
+ENV TZ=America/New_York
 ENV VIRTUAL_ENV=/app/env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
