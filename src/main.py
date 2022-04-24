@@ -185,7 +185,7 @@ class SteamGifts:
             logger.debug(txt)
             return False
         if game_entries > self.max_entries:
-            txt = f"Game {game_name} has {game_entries} entries is above your cutoff of {self.max_entries} entries."
+            txt = f"Game {game_name} has {game_entries} entries and is above your cutoff of {self.max_entries} entries."
             logger.debug(txt)
             return False
 

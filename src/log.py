@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 
 log_format = "%(levelname)s %(asctime)s - %(message)s"
 logging.basicConfig(
-        handlers=[RotatingFileHandler('./debug.log', maxBytes=100000, backupCount=10)],
+        handlers=[RotatingFileHandler('../config/debug.log', maxBytes=100000, backupCount=10)],
         level=logging.DEBUG,
         format=log_format)
 
