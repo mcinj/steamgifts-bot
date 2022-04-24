@@ -242,4 +242,5 @@ class SteamGifts:
             random_seconds = randint(900, 1400)
             logger.info(f"Going to sleep for {random_seconds} seconds.")
             sleep(random_seconds)
+            self.update_info()
 
