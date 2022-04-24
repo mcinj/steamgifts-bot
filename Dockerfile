@@ -4,12 +4,13 @@ RUN mkdir -p /app
 WORKDIR /app
 
 # resolves gcc issue with installing regex dependency
-RUN apk add build-base --no-cache
+RUN apk add build-base tzdata --no-cache
 
+ENV TZ=Africa/New_York
 ENV VIRTUAL_ENV=/app/env
-RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+RUN python -m venv $VIRTUAL_ENV
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
