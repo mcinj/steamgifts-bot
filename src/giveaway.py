@@ -22,7 +22,7 @@ class Giveaway:
         self.game_name = soup_item.find('a', {'class': 'giveaway__heading__name'}).text
         self.game_id = soup_item.find('a', {'class': 'giveaway__heading__name'})['href'].split('/')[2]
         pin_class = soup_item.parent.parent.get("class")
-        self.pinned = pin_class is not None and len(pin_class) == 1 and pin_class[0].find('pinned') != -1
+        self.pinned = pin_class is not None and len(pin_class) > 0 and pin_class[0].find('pinned') != -1
         self.game_cost, self.copies = self.determine_cost_and_copies(self.soup_item, self.game_name, self.game_id)
         self.game_entries = int(soup_item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
         times = soup_item.select('div span[data-timestamp]')
