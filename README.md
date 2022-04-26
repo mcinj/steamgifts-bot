@@ -29,7 +29,7 @@ python run.py
 ```bash
 # Run the container
 # Set TZ based on your timezone: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-docker run --name steamgifts -e TZ=America/New_York -d -v /path/to/the/config/folder:/config mcinj/docker-steamgifts-bot:v2.0
+docker run --name steamgifts -e TZ=America/New_York -d -v /path/to/the/config/folder:/config mcinj/docker-steamgifts-bot:latest
 ```
 
 #### Or build it yourself locally
