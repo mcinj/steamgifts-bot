@@ -9,6 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
 import log
+from giveaway import Giveaway
 
 logger = log.get_logger(__name__)
 
@@ -72,94 +73,32 @@ class SteamGifts:
             sleep(10)
             exit()
 
-    # this isn't exact because 'a week' could mean 8 days or 'a day' could mean 27 hours
-    def determine_time_in_minutes(self, string_time):
-        if not string_time:
-            logger.error(f"Could not determine time from string {string_time}")
-            return None
-        match = re.search('(?P<number>[0-9]+) (?P<time_unit>(hour|day|minute|second|week))', string_time)
-        if match:
-            number = int(match.group('number'))
-            time_unit = match.group('time_unit')
-            if time_unit == 'hour':
-                return number * 60
-            elif time_unit == 'day':
-                return number * 24 * 60
-            elif time_unit == 'minute':
-                return number
-            elif time_unit == 'second':
-                return 1
-            elif time_unit == 'week':
-                return number * 7 * 24 * 60
-            else:
-                logger.error(f"Unknown time unit displayed in giveaway: {string_time}")
-                return None
-        else:
-            return None
-
-    def determine_cost_and_copies(self, item, game_name, game_id):
-        item_headers = item.find_all('span', {'class': 'giveaway__heading__thin'})
-        if len(item_headers) == 1:  # then no multiple copies
-            game_cost = item_headers[0].getText().replace('(', '').replace(')', '').replace('P', '')
-            if not re.search('^[0-9]+$', game_cost):
-                txt = f"Unable to determine cost of {game_name} with id {game_id}. Cost string: {item_headers[0]}"
-                logger.error(txt)
-                return None, None
-            game_cost = int(game_cost)
-            return game_cost, 1
-        elif len(item_headers) == 2:  # then multiple copies
-            game_cost = item_headers[1].getText().replace('(', '').replace(')', '').replace('P', '')
-            if not re.search('^[0-9]+$', game_cost):
-                txt = f"Unable to determine cost of {game_name} with id {game_id}. Cost string: {item_headers[1].getText()}"
-                logger.error(txt)
-                return None, None
-            game_cost = int(game_cost)
-
-            match = re.search('(?P<copies>[0-9]+) Copies', item_headers[0].getText(), re.IGNORECASE)
-            if match:
-                num_copies_str = match.group('copies')
-                num_copies = int(num_copies_str)
-                return game_cost, num_copies
-            else:
-                txt = f"It appears there are multiple copies of {game_name} with id {game_id}, but we could not " \
-                      f"determine that. Copy string: {item_headers[0].getText()}"
-                logger.error(txt)
-                return game_cost, None
-        else:
-            txt = f"Unable to determine cost or num copies of {game_name} with id {game_id}."
-            logger.error(txt)
-            return None, None
-
-    def should_we_enter_giveaway(self, item, game_name, game_cost, copies):
-        times = item.select('div span[data-timestamp]')
-        game_remaining = times[0].text
-        game_remaining_in_minutes = self.determine_time_in_minutes(game_remaining)
-        if game_remaining_in_minutes is None:
+    def should_we_enter_giveaway(self, giveaway):
+        if giveaway.time_remaining_in_minutes is None:
             return False
-        game_created = times[1].text
-        game_created_in_minutes = self.determine_time_in_minutes(game_created)
-        if game_created_in_minutes is None:
+        if giveaway.time_created_in_minutes is None:
             return False
-        game_entries = int(item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
-
-        txt = f"{game_name} - {game_cost}P - {game_entries} entries (w/ {copies} copies) - " \
-              f"Created {game_created} ago with {game_remaining} remaining."
+        txt = f"{giveaway.game_name} - {giveaway.game_cost}P - {giveaway.game_entries} entries (w/ {giveaway.copies} " \
+              f"copies) - Created {giveaway.time_created_string} ago with {giveaway.time_remaining_string} remaining."
         logger.debug(txt)
 
-        if self.points - int(game_cost) < 0:
-            txt = f"⛔ Not enough points to enter: {game_name}"
+        if self.points - int(giveaway.game_cost) < 0:
+            txt = f"⛔ Not enough points to enter: {giveaway.game_name}"
             logger.debug(txt)
             return False
-        if game_cost < self.minimum_game_points:
-            txt = f"Game {game_name} costs {game_cost}P and is below your cutoff of {self.minimum_game_points}P."
+        if giveaway.game_cost < self.minimum_game_points:
+            txt = f"Game {giveaway.game_name} costs {giveaway.game_cost}P and is below your cutoff of " \
+                  f"{self.minimum_game_points}P."
             logger.debug(txt)
             return False
-        if game_remaining_in_minutes > self.max_time_left:
-            txt = f"Game {game_name} has {game_remaining_in_minutes} minutes left and is above your cutoff of {self.max_time_left} minutes."
+        if giveaway.time_remaining_in_minutes > self.max_time_left:
+            txt = f"Game {giveaway.game_name} has {giveaway.time_remaining_in_minutes} minutes left and is " \
+                  f"above your cutoff of {self.max_time_left} minutes."
             logger.debug(txt)
             return False
-        if game_entries / copies > self.max_entries:
-            txt = f"Game {game_name} has {game_entries} entries and is above your cutoff of {self.max_entries} entries."
+        if giveaway.game_entries / giveaway.copies > self.max_entries:
+            txt = f"Game {giveaway.game_name} has {giveaway.game_entries} entries and is above your cutoff " \
+                  f"of {self.max_entries} entries."
             logger.debug(txt)
             return False
 
@@ -185,7 +124,8 @@ class SteamGifts:
 
             soup = self.get_soup_from_page(paginated_url)
 
-            # this matches on a div with the exact class value so we discard ones that also have a class 'is-faded' containing already entered giveaways
+            # this matches on a div with the exact class value so we discard ones
+            # that also have a class 'is-faded' containing already entered giveaways
             game_list = soup.select('div[class=giveaway__row-inner-wrap]')
             # game_list = soup.find_all('div', {'class': 'giveaway__row-inner-wrap'})
 
@@ -196,7 +136,8 @@ class SteamGifts:
                 break
 
             for item in game_list:
-                if len(item.get('lass', [])) == 2 and not self.pinned:
+                giveaway = Giveaway(item)
+                if giveaway.pinned and not self.pinned:
                     continue
 
                 if self.points == 0 or self.points < self.min_points:
@@ -205,20 +146,22 @@ class SteamGifts:
                     run = False
                     break
 
-                game_name = item.find('a', {'class': 'giveaway__heading__name'}).text
-                game_id = item.find('a', {'class': 'giveaway__heading__name'})['href'].split('/')[2]
-
-                game_cost, copies = self.determine_cost_and_copies(item, game_name, game_id)
-
-                if not game_cost:
+                if not giveaway.game_cost:
                     continue
-                if_enter_giveaway = self.should_we_enter_giveaway(item, game_name, game_cost, copies)
+                if_enter_giveaway = self.should_we_enter_giveaway(giveaway)
+                # if we are on any filter type except New and we get to a giveaway that exceeds our
+                # max time left amount, then we don't need to continue to look at giveaways as any
+                # after this point will also exceed the max time left
+                if self.gifts_type != "New" and not giveaway.pinned and \
+                        giveaway.time_remaining_in_minutes > self.max_time_left:
+                    run = False
+                    break
 
                 if if_enter_giveaway:
-                    res = self.enter_giveaway(game_id)
+                    res = self.enter_giveaway(giveaway.game_id)
                     if res:
-                        self.points -= int(game_cost)
-                        txt = f"🎉 One more game! Has just entered {game_name}"
+                        self.points -= int(giveaway.game_cost)
+                        txt = f"🎉 One more game! Has just entered {giveaway.game_name}"
                         logger.info(txt)
                         sleep(randint(4, 15))
                 else:

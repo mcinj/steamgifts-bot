@@ -28,7 +28,7 @@ class MyConfig(ConfigParser):
                 'gift_types': ('All', 'Wishlist', 'Recommended', 'Copies', 'DLC', 'New'),
                 'pinned': ('true', 'false'),
                 'minimum_points': '%s' % (value_range(0,400)),
-                'max_entries': '%s' % (value_range(0,10000)),
+                'max_entries': '%s' % (value_range(0,100000)),
                 'max_time_left': '%s' % (value_range(0,21600)),
                 'minimum_game_points': '%s' % (value_range(0,50))
             }
