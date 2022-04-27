@@ -1,10 +1,10 @@
 import configparser
 from configparser import ConfigParser
+from random import randint
 
 import log
 
 logger = log.get_logger(__name__)
-config = configparser.ConfigParser()
 
 
 class MyException(Exception):
@@ -16,25 +16,51 @@ def value_range(min, max):
 
 
 class MyConfig(ConfigParser):
+    required_values = {
+        'DEFAULT': {
+            'gift_types': ('All', 'Wishlist', 'Recommended', 'Copies', 'DLC', 'New'),
+            'pinned': ('true', 'false'),
+            'minimum_points': '%s' % (value_range(0, 400)),
+            'max_entries': '%s' % (value_range(0, 100000)),
+            'max_time_left': '%s' % (value_range(0, 21600)),
+            'minimum_game_points': '%s' % (value_range(0, 50))
+        }
+    }
+    default_values = {
+        'DEFAULT':  {
+            'cookie': '',
+            'gift_types': 'All',
+            'pinned': 'true',
+            'minimum_points': f"{randint(20, 100)}",
+            'max_entries': f"{randint(1000, 2500)}",
+            'max_time_left': f"{randint(180,500)}",
+            'minimum_game_points': '1'
+        }
+    }
+
     def __init__(self, config_file):
         super(MyConfig, self).__init__()
-
         self.read(config_file)
+        modified = self.create_defaults()
+        if modified:
+            with open(config_file, 'w+') as file:
+                self.write(file)
         self.validate_config()
 
-    def validate_config(self):
-        required_values = {
-            'DEFAULT': {
-                'gift_types': ('All', 'Wishlist', 'Recommended', 'Copies', 'DLC', 'New'),
-                'pinned': ('true', 'false'),
-                'minimum_points': '%s' % (value_range(0,400)),
-                'max_entries': '%s' % (value_range(0,100000)),
-                'max_time_left': '%s' % (value_range(0,21600)),
-                'minimum_game_points': '%s' % (value_range(0,50))
-            }
-        }
+    def create_defaults(self):
+        modified = False
+        for section, keys in self.default_values.items():
+            if section not in self:
+                self.add_section(section)
+                modified = True
+            for key, value in keys.items():
+                if key not in self[section]:
+                    self.set(section, key, value)
+                    modified = True
+        return modified
 
-        for section, keys in required_values.items():
+    def validate_config(self):
+        for section, keys in self.required_values.items():
             if section not in self:
                 raise MyException(
                     'Missing section %s in the config file' % section)
@@ -56,10 +82,9 @@ def run():
     from main import SteamGifts as SG
 
     file_name = '../config/config.ini'
+    config = None
     try:
-        with open(file_name) as f:
-            config.read_file(f)
-            MyConfig(file_name)
+        config = MyConfig(file_name)
     except IOError:
         txt = f"{file_name} doesn't exist. Rename {file_name}.example to {file_name} and fill out."
         logger.warning(txt)

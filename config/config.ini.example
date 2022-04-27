@@ -6,8 +6,8 @@ pinned = true
 # minimum number of points in your account before entering into giveaways
 minimum_points = 50
 # max number of entries in a giveaway for it to be considered
-max_entries = 900
+max_entries = 2000
 # time left in minutes of a giveaway for it to be considered
-max_time_left = 180
+max_time_left = 300
 # the minimum point value for a giveaway to be considered
 minimum_game_points = 5
