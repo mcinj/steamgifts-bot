@@ -35,7 +35,7 @@ class MyConfig(ConfigParser):
             'max_entries': f"{randint(1000, 2500)}",
             'max_time_left': f"{randint(180,500)}",
             'minimum_game_points': '1',
-            'blacklist_keywords': 'hentai,puzzle,adult'
+            'blacklist_keywords': 'hentai,adult'
         }
     }
 

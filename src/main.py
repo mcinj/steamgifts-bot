@@ -86,7 +86,7 @@ class SteamGifts:
 
         if self.blacklist is not None and self.blacklist != ['']:
             for keyword in self.blacklist:
-                if giveaway.game_name.find(keyword) != -1:
+                if giveaway.game_name.lower().find(keyword.lower()) != -1:
                     txt = f"Game {giveaway.game_name} contains the blacklisted keyword {keyword}"
                     logger.debug(txt)
                     return False
