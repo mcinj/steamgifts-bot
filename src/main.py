@@ -15,7 +15,8 @@ logger = log.get_logger(__name__)
 
 
 class SteamGifts:
-    def __init__(self, cookie, gifts_type, pinned, min_points, max_entries, max_time_left, minimum_game_points):
+    def __init__(self, cookie, gifts_type, pinned, min_points, max_entries,
+                 max_time_left, minimum_game_points, blacklist):
         self.cookie = {
             'PHPSESSID': cookie
         }
@@ -25,6 +26,7 @@ class SteamGifts:
         self.max_entries = int(max_entries)
         self.max_time_left = int(max_time_left)
         self.minimum_game_points = int(minimum_game_points)
+        self.blacklist = blacklist.split(',')
 
         self.base = "https://www.steamgifts.com"
         self.session = requests.Session()
@@ -82,6 +84,12 @@ class SteamGifts:
               f"copies) - Created {giveaway.time_created_string} ago with {giveaway.time_remaining_string} remaining."
         logger.debug(txt)
 
+        if self.blacklist is not None and self.blacklist != ['']:
+            for keyword in self.blacklist:
+                if giveaway.game_name.find(keyword) != -1:
+                    txt = f"Game {giveaway.game_name} contains the blacklisted keyword {keyword}"
+                    logger.debug(txt)
+                    return False
         if self.points - int(giveaway.game_cost) < 0:
             txt = f"⛔ Not enough points to enter: {giveaway.game_name}"
             logger.debug(txt)

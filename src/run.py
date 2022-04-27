@@ -34,7 +34,8 @@ class MyConfig(ConfigParser):
             'minimum_points': f"{randint(20, 100)}",
             'max_entries': f"{randint(1000, 2500)}",
             'max_time_left': f"{randint(180,500)}",
-            'minimum_game_points': '1'
+            'minimum_game_points': '1',
+            'blacklist_keywords': 'hentai,puzzle,adult'
         }
     }
 
@@ -101,8 +102,9 @@ def run():
     max_entries = config['DEFAULT'].getint('max_entries')
     max_time_left = config['DEFAULT'].getint('max_time_left')
     minimum_game_points = config['DEFAULT'].getint('minimum_game_points')
+    blacklist = config['DEFAULT'].get('blacklist_keywords')
 
-    s = SG(cookie, gift_types, pinned_games, minimum_points, max_entries, max_time_left, minimum_game_points)
+    s = SG(cookie, gift_types, pinned_games, minimum_points, max_entries, max_time_left, minimum_game_points, blacklist)
     s.start()
 
 

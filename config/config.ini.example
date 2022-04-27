@@ -11,3 +11,5 @@ max_entries = 2000
 max_time_left = 300
 # the minimum point value for a giveaway to be considered
 minimum_game_points = 5
+# a comma separated list of keywords in game titles to ignore
+blacklist_keywords = hentai,puzzle,adult
