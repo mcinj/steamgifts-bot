@@ -1,5 +1,4 @@
 import json
-import re
 from random import randint
 from time import sleep
 
