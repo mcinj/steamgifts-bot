@@ -1,5 +1,6 @@
 import re
 import log
+import time
 
 logger = log.get_logger(__name__)
 
@@ -27,34 +28,17 @@ class Giveaway:
         self.game_entries = int(soup_item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
         times = soup_item.select('div span[data-timestamp]')
         self.time_remaining_string = times[0].text
-        self.time_remaining_in_minutes = self.determine_time_in_minutes(self.time_remaining_string)
+        self.time_remaining_in_minutes = self.determine_time_in_minutes(times[0]['data-timestamp'])
         self.time_created_string = times[1].text
-        self.time_created_in_minutes = self.determine_time_in_minutes(self.time_created_string)
+        self.time_created_in_minutes = self.determine_time_in_minutes(times[1]['data-timestamp'])
 
-    # this isn't exact because 'a week' could mean 8 days or 'a day' could mean 27 hours
-    def determine_time_in_minutes(self, string_time):
-        if not string_time:
-            logger.error(f"Could not determine time from string {string_time}")
+    def determine_time_in_minutes(self, timestamp):
+        if not timestamp or not re.search('^[0-9]+$', timestamp):
+            logger.error(f"Could not determine time from string {timestamp}")
             return None
-        match = re.search('(?P<number>[0-9]+) (?P<time_unit>(hour|day|minute|second|week))', string_time)
-        if match:
-            number = int(match.group('number'))
-            time_unit = match.group('time_unit')
-            if time_unit == 'hour':
-                return number * 60
-            elif time_unit == 'day':
-                return number * 24 * 60
-            elif time_unit == 'minute':
-                return number
-            elif time_unit == 'second':
-                return 1
-            elif time_unit == 'week':
-                return number * 7 * 24 * 60
-            else:
-                logger.error(f"Unknown time unit displayed in giveaway: {string_time}")
-                return None
-        else:
-            return None
+        now = time.localtime()
+        giveaway_endtime = time.localtime(int(timestamp))
+        return int(abs((time.mktime(giveaway_endtime) - time.mktime(now)) / 60))
 
     def determine_cost_and_copies(self, item, game_name, game_id):
         item_headers = item.find_all('span', {'class': 'giveaway__heading__thin'})
