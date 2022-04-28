@@ -183,14 +183,15 @@ class SteamGifts:
             logger.info(txt)
         else:
             random_seconds = randint(900, 1400)
-            txt = f"You have {self.points} points which is below your minimum point threshold of {self.min_points} points. Sleeping for {random_seconds} seconds."
+            txt = f"You have {self.points} points which is below your minimum point threshold of " \
+                  f"{self.min_points} points. Sleeping for {random_seconds / 60} minutes."
             logger.info(txt)
             sleep(random_seconds)
 
         while True:
             self.evaluate_giveaways()
             random_seconds = randint(900, 1400)
-            logger.info(f"Going to sleep for {random_seconds} seconds.")
+            logger.info(f"Going to sleep for {random_seconds / 60 } minutes.")
             sleep(random_seconds)
             self.update_info()
 
