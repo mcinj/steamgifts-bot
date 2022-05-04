@@ -131,12 +131,13 @@ class SteamGifts:
 
             soup = self.get_soup_from_page(paginated_url)
 
+            pinned_giveaway_count = len(soup.select('div.pinned-giveaways__outer-wrap div.giveaway__row-inner-wrap'))
             # this matches on a div with the exact class value so we discard ones
             # that also have a class 'is-faded' containing already entered giveaways
             game_list = soup.select('div[class=giveaway__row-inner-wrap]')
             # game_list = soup.find_all('div', {'class': 'giveaway__row-inner-wrap'})
 
-            if not len(game_list):
+            if not len(game_list) or (len(game_list) == pinned_giveaway_count):
                 txt = f"We have run out of gifts to consider."
                 logger.info(txt)
                 run = False
@@ -161,6 +162,7 @@ class SteamGifts:
                 # after this point will also exceed the max time left
                 if self.gifts_type != "New" and not giveaway.pinned and \
                         giveaway.time_remaining_in_minutes > self.max_time_left:
+                    logger.info("We have run out of gits to consider.")
                     run = False
                     break
 
@@ -171,27 +173,18 @@ class SteamGifts:
                         txt = f"🎉 One more game! Has just entered {giveaway.game_name}"
                         logger.info(txt)
                         sleep(randint(4, 15))
-                else:
-                    continue
-        n = n + 1
+            n = n + 1
 
     def start(self):
         self.update_info()
 
         if self.points >= self.min_points:
-            txt = "🤖 You have %d points. Evaluating giveaways..." % self.points
+            txt = f"🤖 You have {self.points} points. Evaluating '{self.gifts_type}' giveaways..."
             logger.info(txt)
-        else:
-            random_seconds = randint(900, 1400)
-            txt = f"You have {self.points} points which is below your minimum point threshold of " \
-                  f"{self.min_points} points. Sleeping for {random_seconds / 60} minutes."
-            logger.info(txt)
-            sleep(random_seconds)
-
-        while True:
             self.evaluate_giveaways()
-            random_seconds = randint(900, 1400)
-            logger.info(f"Going to sleep for {random_seconds / 60 } minutes.")
-            sleep(random_seconds)
-            self.update_info()
+        else:
+            txt = f"You have {self.points} points which is below your minimum point threshold of " \
+                  f"{self.min_points} points for '{self.gifts_type}' giveaways. Not evaluating right now."
+            logger.info(txt)
+
 

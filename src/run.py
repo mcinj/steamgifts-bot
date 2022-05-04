@@ -1,101 +1,30 @@
-import configparser
-from configparser import ConfigParser
 from random import randint
+from time import sleep
 
 import log
+from src.ConfigReader import ConfigReader, ConfigException
+from src.SteamGifts import SteamGifts
 
 logger = log.get_logger(__name__)
 
 
-class MyException(Exception):
-    pass
-
-
-def value_range(min, max):
-    return [str(x) for x in [*range(min, max + 1)]]
-
-
-class MyConfig(ConfigParser):
-    required_values = {
-        'DEFAULT': {
-            'gift_types': ('All', 'Wishlist', 'Recommended', 'Copies', 'DLC', 'New'),
-            'pinned': ('true', 'false'),
-            'minimum_points': '%s' % (value_range(0, 400)),
-            'max_entries': '%s' % (value_range(0, 100000)),
-            'max_time_left': '%s' % (value_range(0, 21600)),
-            'minimum_game_points': '%s' % (value_range(0, 50))
-        }
-    }
-    default_values = {
-        'DEFAULT':  {
-            'cookie': '',
-            'gift_types': 'All',
-            'pinned': 'true',
-            'minimum_points': f"{randint(20, 100)}",
-            'max_entries': f"{randint(1000, 2500)}",
-            'max_time_left': f"{randint(180,500)}",
-            'minimum_game_points': '1',
-            'blacklist_keywords': 'hentai,adult'
-        }
-    }
-
-    def __init__(self, config_file):
-        super(MyConfig, self).__init__()
-        self.read(config_file)
-        modified = self.create_defaults()
-        if modified:
-            with open(config_file, 'w+') as file:
-                self.write(file)
-        self.validate_config()
-
-    def create_defaults(self):
-        modified = False
-        for section, keys in self.default_values.items():
-            if section not in self:
-                self.add_section(section)
-                modified = True
-            for key, value in keys.items():
-                if key not in self[section]:
-                    self.set(section, key, value)
-                    modified = True
-        return modified
-
-    def validate_config(self):
-        for section, keys in self.required_values.items():
-            if section not in self:
-                raise MyException(
-                    'Missing section %s in the config file' % section)
-
-            for key, values in keys.items():
-                if key not in self[section] or self[section][key] == '':
-                    raise MyException((
-                                              'Missing value for %s under section %s in ' +
-                                              'the config file') % (key, section))
-
-                if values:
-                    if self[section][key] not in values:
-                        raise MyException((
-                                                  'Invalid value for %s under section %s in ' +
-                                                  'the config file') % (key, section))
-
-
 def run():
-    from main import SteamGifts as SG
 
     file_name = '../config/config.ini'
     config = None
     try:
-        config = MyConfig(file_name)
+        config = ConfigReader(file_name)
     except IOError:
         txt = f"{file_name} doesn't exist. Rename {file_name}.example to {file_name} and fill out."
         logger.warning(txt)
         exit(-1)
-    except MyException as e:
+    except ConfigException as e:
         logger.error(e)
         exit(-1)
 
     config.read(file_name)
     cookie = config['DEFAULT'].get('cookie')
+    enabled = config['DEFAULT'].getboolean('enabled')
     pinned_games = config['DEFAULT'].getboolean('pinned')
     gift_types = config['DEFAULT'].get('gift_types')
     minimum_points = config['DEFAULT'].getint('minimum_points')
@@ -104,8 +33,31 @@ def run():
     minimum_game_points = config['DEFAULT'].getint('minimum_game_points')
     blacklist = config['DEFAULT'].get('blacklist_keywords')
 
-    s = SG(cookie, gift_types, pinned_games, minimum_points, max_entries, max_time_left, minimum_game_points, blacklist)
-    s.start()
+    all_page = SteamGifts(cookie, gift_types, pinned_games, minimum_points, max_entries,
+                          max_time_left, minimum_game_points, blacklist)
+
+    wishlist_enabled = config['WISHLIST'].getboolean('wishlist.enabled')
+    wishlist_minimum_points = config['WISHLIST'].getint('wishlist.minimum_points')
+    wishlist_max_entries = config['WISHLIST'].getint('wishlist.max_entries')
+    wishlist_max_time_left = config['WISHLIST'].getint('wishlist.max_time_left')
+
+    wishlist_page = SteamGifts(cookie, 'Wishlist', False, wishlist_minimum_points,
+                               wishlist_max_entries, wishlist_max_time_left, 0, '')
+
+    if not enabled and not wishlist_enabled:
+        logger.error("Both 'Default' and 'Wishlist' configurations are disabled. Nothing will run. Exiting...")
+        sleep(10)
+        exit(-1)
+
+    while True:
+        if wishlist_enabled:
+            wishlist_page.start()
+        if enabled:
+            all_page.start()
+
+        random_seconds = randint(1740, 3540)  # sometime between 29-59 minutes
+        logger.info(f"Going to sleep for {random_seconds / 60} minutes.")
+        sleep(random_seconds)
 
 
 if __name__ == '__main__':

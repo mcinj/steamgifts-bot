@@ -1,8 +1,11 @@
 [DEFAULT]
 cookie = PHPSESSIONCOOKIEGOESHERE
-# gift_types options: All, Wishlist, Recommended, Copies, DLC, New
+# should we consider giveaways on the 'ALL' page? it is the main page
+enabled = true
+# gift_types options: All
 gift_types = All
-pinned = true
+# should we consider pinned-at-the-top giveaways
+pinned = false
 # minimum number of points in your account before entering into giveaways
 minimum_points = 50
 # max number of entries in a giveaway for it to be considered
@@ -13,3 +16,12 @@ max_time_left = 300
 minimum_game_points = 5
 # a comma separated list of keywords in game titles to ignore
 blacklist_keywords = hentai,adult
+[WISHLIST]
+# should we consider giveaways on the 'Wishlist' page?
+wishlist.enabled = true
+# minimum number of points in your account before entering into giveaways
+wishlist.minimum_points = 50
+# max number of entries in a giveaway for it to be considered
+wishlist.max_entries = 2000
+# time left in minutes of a giveaway for it to be considered
+wishlist.max_time_left = 300
