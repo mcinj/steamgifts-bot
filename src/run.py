@@ -25,15 +25,13 @@ def run():
     config.read(file_name)
     cookie = config['DEFAULT'].get('cookie')
     enabled = config['DEFAULT'].getboolean('enabled')
-    pinned_games = config['DEFAULT'].getboolean('pinned')
-    gift_types = config['DEFAULT'].get('gift_types')
     minimum_points = config['DEFAULT'].getint('minimum_points')
     max_entries = config['DEFAULT'].getint('max_entries')
     max_time_left = config['DEFAULT'].getint('max_time_left')
     minimum_game_points = config['DEFAULT'].getint('minimum_game_points')
     blacklist = config['DEFAULT'].get('blacklist_keywords')
 
-    all_page = SteamGifts(cookie, gift_types, pinned_games, minimum_points, max_entries,
+    all_page = SteamGifts(cookie, 'All', False, minimum_points, max_entries,
                           max_time_left, minimum_game_points, blacklist)
 
     wishlist_enabled = config['WISHLIST'].getboolean('wishlist.enabled')

@@ -2,10 +2,6 @@
 cookie = PHPSESSIONCOOKIEGOESHERE
 # should we consider giveaways on the 'ALL' page? it is the main page
 enabled = true
-# gift_types options: All
-gift_types = All
-# should we consider pinned-at-the-top giveaways
-pinned = false
 # minimum number of points in your account before entering into giveaways
 minimum_points = 50
 # max number of entries in a giveaway for it to be considered

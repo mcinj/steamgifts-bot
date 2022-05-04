@@ -1,6 +1,8 @@
 from configparser import ConfigParser
 from random import randint
+import log
 
+logger = log.get_logger(__name__)
 
 class ConfigException(Exception):
     pass
@@ -13,8 +15,6 @@ class ConfigReader(ConfigParser):
     required_values = {
         'DEFAULT': {
             'enabled': ('true', 'false'),
-            'gift_types': ('All'),
-            'pinned': ('false'),
             'minimum_points': '%s' % (value_range(0, 400)),
             'max_entries': '%s' % (value_range(0, 100000)),
             'max_time_left': '%s' % (value_range(0, 21600)),
@@ -31,8 +31,6 @@ class ConfigReader(ConfigParser):
         'DEFAULT':  {
             'cookie': '',
             'enabled': 'true',
-            'gift_types': 'All',
-            'pinned': 'false',
             'minimum_points': f"{randint(20, 100)}",
             'max_entries': f"{randint(1000, 2500)}",
             'max_time_left': f"{randint(180,500)}",
@@ -46,6 +44,12 @@ class ConfigReader(ConfigParser):
             'wishlist.max_time_left': f"{randint(180,500)}"
         }
     }
+    deprecated_values = {
+        'DEFAULT': {
+            'pinned': 'false',
+            'gift_types': 'All'
+        }
+    }
 
     def __init__(self, config_file):
         super(ConfigReader, self).__init__()
@@ -54,6 +58,7 @@ class ConfigReader(ConfigParser):
         if modified:
             with open(config_file, 'w+') as file:
                 self.write(file)
+        self.find_deprecated()
         self.validate_config()
 
     def create_defaults(self):
@@ -67,6 +72,12 @@ class ConfigReader(ConfigParser):
                     self.set(section, key, value)
                     modified = True
         return modified
+
+    def find_deprecated(self):
+        for section, keys in self.deprecated_values.items():
+            for key, values in keys.items():
+                if key in self[section]:
+                    logger.warn(f"config.ini : Key '{key}' in {section} is no longer used. Please remove.")
 
     def validate_config(self):
         for section, keys in self.required_values.items():
