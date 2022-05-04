@@ -2,8 +2,8 @@ from random import randint
 from time import sleep
 
 import log
-from src.ConfigReader import ConfigReader, ConfigException
-from src.SteamGifts import SteamGifts
+from ConfigReader import ConfigReader, ConfigException
+from SteamGifts import SteamGifts
 
 logger = log.get_logger(__name__)
 
