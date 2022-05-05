@@ -1,14 +1,17 @@
 import json
+from datetime import datetime
 from random import randint
 from time import sleep
 
 import requests
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
+from sqlalchemy.orm import Session
 from urllib3.util import Retry
 
 import log
 from giveaway import Giveaway
+from tables import engine, TableGiveaway
 
 logger = log.get_logger(__name__)
 
@@ -117,12 +120,19 @@ class SteamGifts:
 
         return True
 
-    def enter_giveaway(self, game_id):
-        payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': game_id}
+    def enter_giveaway(self, giveaway):
+        payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': giveaway.game_id}
         entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie)
         json_data = json.loads(entry.text)
 
         if json_data['type'] == 'success':
+            g = TableGiveaway(name=giveaway.game_name, game_id=giveaway.game_id, entries=giveaway.game_entries,
+                              giveaway_created=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
+                              giveaway_ended=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
+                              cost=giveaway.game_cost, copies=giveaway.copies, entered=True)
+            with Session(engine) as session:
+                session.add(g)
+                session.commit()
             return True
 
     def evaluate_giveaways(self, page=1):
@@ -174,7 +184,7 @@ class SteamGifts:
                     break
 
                 if if_enter_giveaway:
-                    res = self.enter_giveaway(giveaway.game_id)
+                    res = self.enter_giveaway(giveaway)
                     if res:
                         self.points -= int(giveaway.game_cost)
                         txt = f"🎉 One more game! Has just entered {giveaway.game_name}"

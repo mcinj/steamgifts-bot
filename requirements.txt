@@ -1,3 +1,6 @@
 requests==2.27.1
 beautifulsoup4==4.11.1
 urllib3==1.26.9
+sqlalchemy==1.4.36
+sqlalchemy_utils==0.38.2
+pytz==2022.1

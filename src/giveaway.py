@@ -15,8 +15,10 @@ class Giveaway:
         self.game_cost = None
         self.game_entries = None
         self.copies = None
+        self.time_created_timestamp = None
         self.time_remaining_string = None
         self.time_remaining_in_minutes = None
+        self.time_remaining_timestamp = None
         self.time_created_string = None
         self.time_created_in_minutes = None
 
@@ -27,8 +29,10 @@ class Giveaway:
         self.game_cost, self.copies = self.determine_cost_and_copies(self.soup_item, self.game_name, self.game_id)
         self.game_entries = int(soup_item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
         times = soup_item.select('div span[data-timestamp]')
+        self.time_remaining_timestamp = int(times[0]['data-timestamp'])
         self.time_remaining_string = times[0].text
         self.time_remaining_in_minutes = self.determine_time_in_minutes(times[0]['data-timestamp'])
+        self.time_created_timestamp = int(times[1]['data-timestamp'])
         self.time_created_string = times[1].text
         self.time_created_in_minutes = self.determine_time_in_minutes(times[1]['data-timestamp'])
 

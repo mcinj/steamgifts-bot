@@ -6,11 +6,11 @@ from ConfigReader import ConfigReader, ConfigException
 from SteamGifts import SteamGifts, SteamGiftsException
 from notification import Notification
 
+
 logger = log.get_logger(__name__)
 
 
 def run():
-
     file_name = '../config/config.ini'
     config = None
     try:
@@ -68,12 +68,12 @@ def run():
             logger.info(f"Going to sleep for {random_seconds / 60} minutes.")
             sleep(random_seconds)
     except SteamGiftsException as e:
-        notification.send(e)
+        notification.send('error', e)
         sleep(5)
         exit(-1)
     except Exception as e:
         logger.error(e)
-        notification.send("Something happened and the bot had to quit!")
+        notification.send('error', "Something happened and the bot had to quit!")
         sleep(5)
         exit(-1)
 

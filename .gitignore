@@ -5,3 +5,4 @@ __pycache__/
 .idea
 config/config.ini
 config/debug.log
+config/sqlite.db
