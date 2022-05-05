@@ -132,18 +132,19 @@ class SteamGifts:
             soup = self.get_soup_from_page(paginated_url)
 
             pinned_giveaway_count = len(soup.select('div.pinned-giveaways__outer-wrap div.giveaway__row-inner-wrap'))
+            all_games_list_count = len(soup.select('div.giveaway__row-inner-wrap'))
             # this matches on a div with the exact class value so we discard ones
             # that also have a class 'is-faded' containing already entered giveaways
-            game_list = soup.select('div[class=giveaway__row-inner-wrap]')
+            unentered_game_list = soup.select('div[class=giveaway__row-inner-wrap]')
             # game_list = soup.find_all('div', {'class': 'giveaway__row-inner-wrap'})
 
-            if not len(game_list) or (len(game_list) == pinned_giveaway_count):
+            if not len(unentered_game_list) or (all_games_list_count == pinned_giveaway_count):
                 txt = f"We have run out of gifts to consider."
                 logger.info(txt)
                 run = False
                 break
 
-            for item in game_list:
+            for item in unentered_game_list:
                 giveaway = Giveaway(item)
                 if giveaway.pinned and not self.pinned:
                     continue
