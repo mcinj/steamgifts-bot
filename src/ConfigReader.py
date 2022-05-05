@@ -4,6 +4,7 @@ import log
 
 logger = log.get_logger(__name__)
 
+
 class ConfigException(Exception):
     pass
 
@@ -25,6 +26,9 @@ class ConfigReader(ConfigParser):
             'wishlist.minimum_points': '%s' % (value_range(0, 400)),
             'wishlist.max_entries': '%s' % (value_range(0, 100000)),
             'wishlist.max_time_left': '%s' % (value_range(0, 21600))
+        },
+        'NOTIFICATIONS': {
+            'pushover.enabled': ('true', 'false'),
         }
     }
     default_values = {
@@ -34,14 +38,20 @@ class ConfigReader(ConfigParser):
             'minimum_points': f"{randint(20, 100)}",
             'max_entries': f"{randint(1000, 2500)}",
             'max_time_left': f"{randint(180,500)}",
-            'minimum_game_points': '1',
+            'minimum_game_points': f"{randint(20, 100)}",
             'blacklist_keywords': 'hentai,adult'
         },
         'WISHLIST': {
             'wishlist.enabled': 'true',
-            'wishlist.minimum_points': f"{randint(20, 100)}",
+            'wishlist.minimum_points': '1',
             'wishlist.max_entries': f"{randint(10000, 100000)}",
             'wishlist.max_time_left': f"{randint(180,500)}"
+        },
+        'NOTIFICATIONS': {
+            'pushover.enabled': 'false',
+            'pushover.token': '',
+            'pushover.user_key': '',
+
         }
     }
     deprecated_values = {

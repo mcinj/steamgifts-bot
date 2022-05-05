@@ -9,15 +9,22 @@ max_entries = 2000
 # time left in minutes of a giveaway for it to be considered
 max_time_left = 300
 # the minimum point value for a giveaway to be considered
-minimum_game_points = 5
+minimum_game_points = 50
 # a comma separated list of keywords in game titles to ignore
 blacklist_keywords = hentai,adult
 [WISHLIST]
 # should we consider giveaways on the 'Wishlist' page?
 wishlist.enabled = true
 # minimum number of points in your account before entering into giveaways
-wishlist.minimum_points = 50
+wishlist.minimum_points = 1
 # max number of entries in a giveaway for it to be considered
-wishlist.max_entries = 2000
+wishlist.max_entries = 10000
 # time left in minutes of a giveaway for it to be considered
 wishlist.max_time_left = 300
+[NOTIFICATIONS]
+# if we should send notifications via pushover
+pushover.enabled = false
+# your specific pushover token
+pushover.token =
+# your specific pushover user key
+pushover.user_key =

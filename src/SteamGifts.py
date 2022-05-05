@@ -13,9 +13,15 @@ from giveaway import Giveaway
 logger = log.get_logger(__name__)
 
 
+class SteamGiftsException(Exception):
+    pass
+
+
 class SteamGifts:
     def __init__(self, cookie, gifts_type, pinned, min_points, max_entries,
-                 max_time_left, minimum_game_points, blacklist):
+                 max_time_left, minimum_game_points, blacklist, notification):
+        self.xsrf_token = None
+        self.points = None
         self.cookie = {
             'PHPSESSID': cookie
         }
@@ -26,6 +32,7 @@ class SteamGifts:
         self.max_time_left = int(max_time_left)
         self.minimum_game_points = int(minimum_game_points)
         self.blacklist = blacklist.split(',')
+        self.notification = notification
 
         self.base = "https://www.steamgifts.com"
         self.session = requests.Session()
@@ -71,8 +78,7 @@ class SteamGifts:
             self.points = int(soup.find('span', {'class': 'nav__points'}).text)  # storage points
         except TypeError:
             logger.error("⛔  Cookie is not valid.")
-            sleep(10)
-            exit()
+            raise SteamGiftsException("Cookie is not valid.")
 
     def should_we_enter_giveaway(self, giveaway):
         if giveaway.time_remaining_in_minutes is None:
@@ -178,7 +184,6 @@ class SteamGifts:
 
     def start(self):
         self.update_info()
-
         if self.points >= self.min_points:
             txt = f"🤖 You have {self.points} points. Evaluating '{self.gifts_type}' giveaways..."
             logger.info(txt)
@@ -187,5 +192,3 @@ class SteamGifts:
             txt = f"You have {self.points} points which is below your minimum point threshold of " \
                   f"{self.min_points} points for '{self.gifts_type}' giveaways. Not evaluating right now."
             logger.info(txt)
-
-
