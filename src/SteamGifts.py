@@ -122,7 +122,7 @@ class SteamGifts:
     def evaluate_giveaways(self, page=1):
         n = page
         run = True
-        while run:
+        while run and n < 3:  # hard stop safety net at page 3 as idk why we would ever get to this point
             txt = "⚙️  Retrieving games from %d page." % n
             logger.info(txt)
 
