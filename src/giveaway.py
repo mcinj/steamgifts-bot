@@ -46,7 +46,7 @@ class Giveaway:
         self.time_created_in_minutes = self.determine_time_in_minutes(times[1]['data-timestamp'])
 
     def get_steam_app_id(self, steam_url):
-        match = re.search('^.+/app/(?P<steam_app_id>[0-9]+)/', steam_url, re.IGNORECASE)
+        match = re.search('^.+/[a-z0-9]+/(?P<steam_app_id>[0-9]+)/$', steam_url, re.IGNORECASE)
         if match:
             return match.group('steam_app_id')
         else:
