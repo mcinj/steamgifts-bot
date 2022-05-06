@@ -50,9 +50,9 @@ class SteamGifts:
         }
 
     def requests_retry_session(
-        self,
-        retries=5,
-        backoff_factor=0.3
+            self,
+            retries=5,
+            backoff_factor=0.3
     ):
         session = self.session or requests.Session()
         retry = Retry(
@@ -88,7 +88,7 @@ class SteamGifts:
             return False
         if giveaway.time_created_in_minutes is None:
             return False
-        txt = f"{giveaway.game_name} - {giveaway.game_cost}P - {giveaway.game_entries} entries (w/ {giveaway.copies} " \
+        txt = f"{giveaway.game_name} - {giveaway.cost}P - {giveaway.game_entries} entries (w/ {giveaway.copies} " \
               f"copies) - Created {giveaway.time_created_string} ago with {giveaway.time_remaining_string} remaining."
         logger.debug(txt)
 
@@ -98,12 +98,12 @@ class SteamGifts:
                     txt = f"Game {giveaway.game_name} contains the blacklisted keyword {keyword}"
                     logger.debug(txt)
                     return False
-        if self.points - int(giveaway.game_cost) < 0:
+        if self.points - int(giveaway.cost) < 0:
             txt = f"⛔ Not enough points to enter: {giveaway.game_name}"
             logger.debug(txt)
             return False
-        if giveaway.game_cost < self.minimum_game_points:
-            txt = f"Game {giveaway.game_name} costs {giveaway.game_cost}P and is below your cutoff of " \
+        if giveaway.cost < self.minimum_game_points:
+            txt = f"Game {giveaway.game_name} costs {giveaway.cost}P and is below your cutoff of " \
                   f"{self.minimum_game_points}P."
             logger.debug(txt)
             return False
@@ -121,19 +121,34 @@ class SteamGifts:
         return True
 
     def enter_giveaway(self, giveaway):
-        payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': giveaway.game_id}
+        payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': giveaway.giveaway_game_id}
         entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie)
         json_data = json.loads(entry.text)
 
         if json_data['type'] == 'success':
-            g = TableGiveaway(name=giveaway.game_name, game_id=giveaway.game_id, entries=giveaway.game_entries,
-                              giveaway_created=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
-                              giveaway_ended=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
-                              cost=giveaway.game_cost, copies=giveaway.copies, entered=True)
-            with Session(engine) as session:
-                session.add(g)
-                session.commit()
+            logger.debug(f"Successfully entered giveaway {giveaway.giveaway_game_id}")
             return True
+        else:
+            logger.error(f"Failed entering giveaway {giveaway.giveaway_game_id}")
+            return False
+
+    def create_or_update_giveaway(self, giveaway, entered):
+        g = TableGiveaway(
+            steam_app_id=giveaway.steam_app_id,
+            steam_url=giveaway.steam_url,
+            game_name=giveaway.game_name,
+            giveaway_game_id=giveaway.giveaway_game_id,
+            giveaway_uri=giveaway.giveaway_uri,
+            user=giveaway.user,
+            giveaway_created_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
+            giveaway_ended_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
+            cost=giveaway.cost,
+            copies=giveaway.copies,
+            entered=entered,
+            game_entries=giveaway.game_entries)
+        with Session(engine) as session:
+            session.merge(g)
+            session.commit()
 
     def evaluate_giveaways(self, page=1):
         n = page
@@ -171,25 +186,30 @@ class SteamGifts:
                     run = False
                     break
 
-                if not giveaway.game_cost:
+                if not giveaway.cost:
                     continue
                 if_enter_giveaway = self.should_we_enter_giveaway(giveaway)
+                if if_enter_giveaway:
+                    res = self.enter_giveaway(giveaway)
+                    if res:
+                        self.create_or_update_giveaway(giveaway, True)
+                        self.points -= int(giveaway.cost)
+                        txt = f"🎉 One more game! Has just entered {giveaway.game_name}"
+                        logger.info(txt)
+                        sleep(randint(4, 15))
+                    else:
+                        self.create_or_update_giveaway(giveaway, False)
+                else:
+                    self.create_or_update_giveaway(giveaway, False)
                 # if we are on any filter type except New and we get to a giveaway that exceeds our
                 # max time left amount, then we don't need to continue to look at giveaways as any
                 # after this point will also exceed the max time left
                 if self.gifts_type != "New" and not giveaway.pinned and \
                         giveaway.time_remaining_in_minutes > self.max_time_left:
-                    logger.info("We have run out of gits to consider.")
+                    logger.info("We have run out of gifts to consider.")
                     run = False
                     break
 
-                if if_enter_giveaway:
-                    res = self.enter_giveaway(giveaway)
-                    if res:
-                        self.points -= int(giveaway.game_cost)
-                        txt = f"🎉 One more game! Has just entered {giveaway.game_name}"
-                        logger.info(txt)
-                        sleep(randint(4, 15))
             n = n + 1
 
     def start(self):

@@ -9,11 +9,15 @@ class Giveaway:
 
     def __init__(self, soup_item):
         self.soup_item = soup_item
+        self.steam_app_id = None
+        self.steam_url = None
         self.game_name = None
-        self.game_id = None
+        self.giveaway_game_id = None
+        self.giveaway_uri = None
         self.pinned = False
-        self.game_cost = None
+        self.cost = None
         self.game_entries = None
+        self.user = None
         self.copies = None
         self.time_created_timestamp = None
         self.time_remaining_string = None
@@ -22,12 +26,17 @@ class Giveaway:
         self.time_created_string = None
         self.time_created_in_minutes = None
 
+        icons = soup_item.select('a.giveaway__icon')
+        self.steam_url = icons[0]['href']
+        self.steam_app_id = self.get_steam_app_id(self.steam_url)
         self.game_name = soup_item.find('a', {'class': 'giveaway__heading__name'}).text
-        self.game_id = soup_item.find('a', {'class': 'giveaway__heading__name'})['href'].split('/')[2]
+        self.giveaway_game_id = soup_item.find('a', {'class': 'giveaway__heading__name'})['href'].split('/')[2]
+        self.giveaway_uri = soup_item.select_one('a.giveaway__heading__name')['href']
         pin_class = soup_item.parent.parent.get("class")
         self.pinned = pin_class is not None and len(pin_class) > 0 and pin_class[0].find('pinned') != -1
-        self.game_cost, self.copies = self.determine_cost_and_copies(self.soup_item, self.game_name, self.game_id)
+        self.cost, self.copies = self.determine_cost_and_copies(self.soup_item, self.game_name, self.giveaway_game_id)
         self.game_entries = int(soup_item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
+        self.user = soup_item.select_one('a.giveaway__username').text
         times = soup_item.select('div span[data-timestamp]')
         self.time_remaining_timestamp = int(times[0]['data-timestamp'])
         self.time_remaining_string = times[0].text
@@ -35,6 +44,13 @@ class Giveaway:
         self.time_created_timestamp = int(times[1]['data-timestamp'])
         self.time_created_string = times[1].text
         self.time_created_in_minutes = self.determine_time_in_minutes(times[1]['data-timestamp'])
+
+    def get_steam_app_id(self, steam_url):
+        match = re.search('^.+/app/(?P<steam_app_id>[0-9]+)/', steam_url, re.IGNORECASE)
+        if match:
+            return match.group('steam_app_id')
+        else:
+            return None
 
     def determine_time_in_minutes(self, timestamp):
         if not timestamp or not re.search('^[0-9]+$', timestamp):

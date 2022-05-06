@@ -8,7 +8,7 @@ import pytz
 mapper_registry = registry()
 mapper_registry.metadata
 Base = mapper_registry.generate_base()
-engine = create_engine('sqlite:///../config/sqlite.db', echo=True)
+engine = create_engine('sqlite:///../config/sqlite.db', echo=False)
 
 
 class TableNotification(Base):
@@ -25,17 +25,20 @@ class TableNotification(Base):
 
 class TableGiveaway(Base):
     __tablename__ = 'giveaway'
-    id = Column(Integer, primary_key=True, nullable=False)
-    name = Column(String(200), nullable=False)
-    game_id = Column(String(10), nullable=False)
-    entries = Column(Integer(), nullable=False)
-    giveaway_created = Column(DateTime(timezone=True), nullable=False)
-    giveaway_ended = Column(DateTime(timezone=True), nullable=False)
+    steam_app_id = Column(String(15), primary_key=True, nullable=False)
+    giveaway_game_id = Column(String(10), primary_key=True, nullable=False)
+    steam_url = Column(String(100), nullable=False)
+    game_name = Column(String(200), nullable=False)
+    giveaway_uri = Column(String(200), nullable=False)
+    user = Column(String(40), nullable=False)
+    giveaway_created_at = Column(DateTime(timezone=True), nullable=False)
+    giveaway_ended_at = Column(DateTime(timezone=True), nullable=False)
     cost = Column(Integer(), nullable=False)
     copies = Column(Integer(), nullable=False)
     entered = Column(Boolean(), nullable=False)
+    game_entries = Column(Integer(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    added_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     __mapper_args__ = {"eager_defaults": True}
 
