@@ -23,6 +23,7 @@ class SteamGiftsException(Exception):
 class SteamGifts:
     def __init__(self, cookie, gifts_type, pinned, min_points, max_entries,
                  max_time_left, minimum_game_points, blacklist, notification):
+        self.contributor_level = None
         self.xsrf_token = None
         self.points = None
         self.cookie = {
@@ -79,6 +80,7 @@ class SteamGifts:
         try:
             self.xsrf_token = soup.find('input', {'name': 'xsrf_token'})['value']
             self.points = int(soup.find('span', {'class': 'nav__points'}).text)  # storage points
+            self.contributor_level = int(float(soup.select_one('nav a>span[title]')['title']))
         except TypeError:
             logger.error("⛔  Cookie is not valid.")
             raise SteamGiftsException("Cookie is not valid.")
@@ -98,6 +100,11 @@ class SteamGifts:
                     txt = f"Game {giveaway.game_name} contains the blacklisted keyword {keyword}"
                     logger.debug(txt)
                     return False
+        if giveaway.contributor_level is None or self.contributor_level < giveaway.contributor_level:
+            txt = f"Game {giveaway.game_name} requires at least level {giveaway.contributor_level} contributor level " \
+                  f"to enter. Your level: {self.contributor_level}"
+            logger.debug(txt)
+            return False
         if self.points - int(giveaway.cost) < 0:
             txt = f"⛔ Not enough points to enter: {giveaway.game_name}"
             logger.debug(txt)
@@ -144,6 +151,7 @@ class SteamGifts:
             giveaway_ended_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
             cost=giveaway.cost,
             copies=giveaway.copies,
+            contributor_level=giveaway.contributor_level,
             entered=entered,
             game_entries=giveaway.game_entries)
         with Session(engine) as session:

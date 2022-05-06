@@ -35,6 +35,7 @@ class TableGiveaway(Base):
     giveaway_ended_at = Column(DateTime(timezone=True), nullable=False)
     cost = Column(Integer(), nullable=False)
     copies = Column(Integer(), nullable=False)
+    contributor_level = Column(Integer(), nullable=False)
     entered = Column(Boolean(), nullable=False)
     game_entries = Column(Integer(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

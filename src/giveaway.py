@@ -19,6 +19,7 @@ class Giveaway:
         self.game_entries = None
         self.user = None
         self.copies = None
+        self.contributor_level = None
         self.time_created_timestamp = None
         self.time_remaining_string = None
         self.time_remaining_in_minutes = None
@@ -36,6 +37,8 @@ class Giveaway:
         self.pinned = pin_class is not None and len(pin_class) > 0 and pin_class[0].find('pinned') != -1
         self.cost, self.copies = self.determine_cost_and_copies(self.soup_item, self.game_name, self.giveaway_game_id)
         self.game_entries = int(soup_item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
+        contributor_level = soup_item.select_one('div[title="Contributor Level"]')
+        self.contributor_level = self.determine_contributor_level(contributor_level)
         self.user = soup_item.select_one('a.giveaway__username').text
         times = soup_item.select('div span[data-timestamp]')
         self.time_remaining_timestamp = int(times[0]['data-timestamp'])
@@ -44,6 +47,15 @@ class Giveaway:
         self.time_created_timestamp = int(times[1]['data-timestamp'])
         self.time_created_string = times[1].text
         self.time_created_in_minutes = self.determine_time_in_minutes(times[1]['data-timestamp'])
+
+    def determine_contributor_level(self, contributor_level):
+        if contributor_level is None:
+            return 0
+        match = re.search('^Level (?P<level>[0-9]+)\\+$', contributor_level.text, re.IGNORECASE)
+        if match:
+            return int(match.group('level'))
+        else:
+            return None
 
     def get_steam_app_id(self, steam_url):
         match = re.search('^.+/[a-z0-9]+/(?P<steam_app_id>[0-9]+)/$', steam_url, re.IGNORECASE)
