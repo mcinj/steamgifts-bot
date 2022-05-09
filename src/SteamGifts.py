@@ -83,9 +83,9 @@ class SteamGifts:
             logger.error("⛔  Cookie is not valid.")
             raise SteamGiftsException("Cookie is not valid.")
 
-        won = soup.select("a[title='Giveaways Won'] div.fade_infinite")
+        won = soup.select("a[title='Giveaways Won'] div")
         if won:
-            number_won = soup.select_one("a[title='Giveaways Won'] div.fade_infinite").text
+            number_won = soup.select_one("a[title='Giveaways Won'] div").text
             won_notifications = TableNotification.get_won_notifications_today()
             if won_notifications and len(won_notifications) >= 1:
                 logger.debug("Win(s) detected, but we have already notified that there are won games waiting "
