@@ -1,17 +1,15 @@
 import json
-from datetime import datetime
 from random import randint
 from time import sleep
 
 import requests
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
-from sqlalchemy.orm import Session
 from urllib3.util import Retry
 
 import log
 from giveaway import Giveaway
-from tables import engine, TableGiveaway
+from tables import TableNotification, TableGiveaway
 
 logger = log.get_logger(__name__)
 
@@ -69,7 +67,7 @@ class SteamGifts:
         return session
 
     def get_soup_from_page(self, url):
-        r = self.requests_retry_session().get(url)
+        self.requests_retry_session().get(url)
         r = requests.get(url, cookies=self.cookie)
         soup = BeautifulSoup(r.text, 'html.parser')
         return soup
@@ -84,6 +82,20 @@ class SteamGifts:
         except TypeError:
             logger.error("⛔  Cookie is not valid.")
             raise SteamGiftsException("Cookie is not valid.")
+
+        won = soup.select("a[title='Giveaways Won'] div.fade_infinite")
+        if won:
+            number_won = soup.select_one("a[title='Giveaways Won'] div.fade_infinite").text
+            won_notifications = TableNotification.get_won_notifications_today()
+            if won_notifications and len(won_notifications) >= 1:
+                logger.debug("Win(s) detected, but we have already notified that there are won games waiting "
+                             "to be received. Doing nothing.")
+            else:
+                logger.debug("Win(s) detected. Going to send a notification.")
+                logger.info(f"WINNER! You have {number_won} game(s) waiting to be claimed.")
+                self.notification.send_won(f"WINNER! You have {number_won} game(s) waiting to be claimed.")
+        else:
+            logger.debug('No wins detected. Doing nothing.')
 
     def should_we_enter_giveaway(self, giveaway):
         if giveaway.time_remaining_in_minutes is None:
@@ -139,25 +151,6 @@ class SteamGifts:
             logger.error(f"Failed entering giveaway {giveaway.giveaway_game_id}")
             return False
 
-    def create_or_update_giveaway(self, giveaway, entered):
-        g = TableGiveaway(
-            steam_app_id=giveaway.steam_app_id,
-            steam_url=giveaway.steam_url,
-            game_name=giveaway.game_name,
-            giveaway_game_id=giveaway.giveaway_game_id,
-            giveaway_uri=giveaway.giveaway_uri,
-            user=giveaway.user,
-            giveaway_created_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
-            giveaway_ended_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
-            cost=giveaway.cost,
-            copies=giveaway.copies,
-            contributor_level=giveaway.contributor_level,
-            entered=entered,
-            game_entries=giveaway.game_entries)
-        with Session(engine) as session:
-            session.merge(g)
-            session.commit()
-
     def evaluate_giveaways(self, page=1):
         n = page
         run = True
@@ -180,7 +173,6 @@ class SteamGifts:
             if not len(unentered_game_list) or (all_games_list_count == pinned_giveaway_count):
                 txt = f"We have run out of gifts to consider."
                 logger.info(txt)
-                run = False
                 break
 
             for item in unentered_game_list:
@@ -200,15 +192,15 @@ class SteamGifts:
                 if if_enter_giveaway:
                     res = self.enter_giveaway(giveaway)
                     if res:
-                        self.create_or_update_giveaway(giveaway, True)
+                        TableGiveaway.upsert_giveaway(giveaway, True)
                         self.points -= int(giveaway.cost)
                         txt = f"🎉 One more game! Has just entered {giveaway.game_name}"
                         logger.info(txt)
                         sleep(randint(4, 15))
                     else:
-                        self.create_or_update_giveaway(giveaway, False)
+                        TableGiveaway.upsert_giveaway(giveaway, False)
                 else:
-                    self.create_or_update_giveaway(giveaway, False)
+                    TableGiveaway.upsert_giveaway(giveaway, False)
                 # if we are on any filter type except New and we get to a giveaway that exceeds our
                 # max time left amount, then we don't need to continue to look at giveaways as any
                 # after this point will also exceed the max time left

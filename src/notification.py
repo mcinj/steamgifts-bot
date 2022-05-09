@@ -17,17 +17,23 @@ class Notification:
         self.pushover_user_key = None
         self.message_prefix = "SG-bot: "
 
-    def send(self, type_of_error, message):
-        logger.debug(f"Attempting to notify: {message}")
-        if self.pushover:
-            logger.debug("Pushover enabled. Sending message.")
-            self.__pushover(type_of_error, message)
+    def send_won(self, message):
+        self.__send('won', message)
+
+    def send_error(self, message):
+        self.__send('error', message)
 
     def enable_pushover(self, token, user_key):
         logger.debug("Enabling pushover notifications.")
         self.pushover = True
         self.pushover_token = token
         self.pushover_user_key = user_key
+
+    def __send(self, type_of_error, message):
+        logger.debug(f"Attempting to notify: {message}")
+        if self.pushover:
+            logger.debug("Pushover enabled. Sending message.")
+            self.__pushover(type_of_error, message)
 
     def __pushover(self, type_of_error, message):
         conn = http.client.HTTPSConnection("api.pushover.net:443")
@@ -47,5 +53,3 @@ class Notification:
         with Session(engine) as session:
             session.add(n)
             session.commit()
-
-

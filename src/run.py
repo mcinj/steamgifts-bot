@@ -68,12 +68,12 @@ def run():
             logger.info(f"Going to sleep for {random_seconds / 60} minutes.")
             sleep(random_seconds)
     except SteamGiftsException as e:
-        notification.send('error', e)
+        notification.send_error(e)
         sleep(5)
         exit(-1)
     except Exception as e:
         logger.error(e)
-        notification.send('error', "Something happened and the bot had to quit!")
+        notification.send_error("Something happened and the bot had to quit!")
         sleep(5)
         exit(-1)
 
