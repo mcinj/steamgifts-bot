@@ -25,9 +25,23 @@ class TableNotification(Base):
     @classmethod
     def get_won_notifications_today(cls):
         with Session(engine) as session:
-            return session.query(TableNotification)\
-                .filter(func.DATE(TableNotification.created_at) == datetime.utcnow().date())\
-                .filter_by(type='won')\
+            return session.query(TableNotification) \
+                .filter(func.DATE(TableNotification.created_at) == datetime.utcnow().date()) \
+                .filter_by(type='won') \
+                .all()
+
+    @classmethod
+    def get_won_notifications(cls):
+        with Session(engine) as session:
+            return session.query(TableNotification) \
+                .filter_by(type='won') \
+                .all()
+
+    @classmethod
+    def get_error_notifications(cls):
+        with Session(engine) as session:
+            return session.query(TableNotification) \
+                .filter_by(type='error') \
                 .all()
 
 
@@ -68,10 +82,15 @@ class TableGiveaway(Base):
         return datetime.utcfromtimestamp(timestamp)
 
     @classmethod
-    def upsert_giveaway(cls, giveaway, entered):
+    def get_by_ids(cls, giveaway):
         with Session(engine) as session:
-            result = session.query(TableGiveaway).filter_by(giveaway_id=giveaway.giveaway_game_id,
-                                                            steam_id=giveaway.steam_app_id).all()
+            return session.query(TableGiveaway).filter_by(giveaway_id=giveaway.giveaway_game_id,
+                                                          steam_id=giveaway.steam_app_id).all()
+
+    @classmethod
+    def insert(cls, giveaway, entered):
+        with Session(engine) as session:
+            result = session.query(TableSteamItem).filter_by(steam_id=giveaway.steam_app_id).all()
             if result:
                 steam_id = result[0].steam_id
             else:
@@ -79,10 +98,9 @@ class TableGiveaway(Base):
                     steam_id=giveaway.steam_app_id,
                     steam_url=giveaway.steam_url,
                     game_name=giveaway.game_name)
-                session.merge(item)
+                session.add(item)
                 session.flush()
                 steam_id = item.steam_id
-
             g = TableGiveaway(
                 giveaway_id=giveaway.giveaway_game_id,
                 steam_id=steam_id,
@@ -96,9 +114,31 @@ class TableGiveaway(Base):
                 entered=entered,
                 won=False,
                 game_entries=giveaway.game_entries)
-
-            session.merge(g)
+            session.add(g)
             session.commit()
+
+    @classmethod
+    def upsert_giveaway(cls, giveaway, entered):
+        result = TableGiveaway.get_by_ids(giveaway)
+        if not result:
+            TableGiveaway.insert(giveaway, entered)
+        else:
+            with Session(engine) as session:
+                g = TableGiveaway(
+                    giveaway_id=giveaway.giveaway_game_id,
+                    steam_id=result[0].steam_id,
+                    giveaway_uri=giveaway.giveaway_uri,
+                    user=giveaway.user,
+                    giveaway_created_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
+                    giveaway_ended_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
+                    cost=giveaway.cost,
+                    copies=giveaway.copies,
+                    contributor_level=giveaway.contributor_level,
+                    entered=entered,
+                    won=False,
+                    game_entries=giveaway.game_entries)
+                session.merge(g)
+                session.commit()
 
 
 if not database_exists(engine.url):
