@@ -3,7 +3,7 @@ import urllib
 
 from sqlalchemy.orm import Session
 
-from tables import engine, TableNotification
+from tables import TableNotification
 import log
 
 logger = log.get_logger(__name__)
@@ -46,10 +46,8 @@ class Notification:
         response = conn.getresponse()
         logger.debug(f"Pushover response code: {response.getcode()}")
         if response.getcode() == 200:
-            n = TableNotification(type=type_of_error, message=f"{message}", medium='pushover', success=True)
+            success = True
         else:
             logger.error(f"Pushover notification failed. Code {response.getcode()}: {response.read().decode()}")
-            n = TableNotification(type=type_of_error, message=f"{message}", medium='pushover', success=False)
-        with Session(engine) as session:
-            session.add(n)
-            session.commit()
+            success = False
+        TableNotification.insert(type_of_error, f"{message}", 'pushover', success)

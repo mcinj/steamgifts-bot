@@ -23,6 +23,13 @@ class TableNotification(Base):
     __mapper_args__ = {"eager_defaults": True}
 
     @classmethod
+    def insert(cls, type_of_error, message, medium, success):
+        with Session(engine) as session:
+            n = TableNotification(type=type_of_error, message=message, medium=medium, success=success)
+            session.add(n)
+            session.commit()
+
+    @classmethod
     def get_won_notifications_today(cls):
         with Session(engine) as session:
             return session.query(TableNotification) \
