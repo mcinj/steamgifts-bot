@@ -11,11 +11,11 @@ logger = log.get_logger(__name__)
 
 class Notification:
 
-    def __init__(self):
+    def __init__(self, message_prefix):
         self.pushover = False
         self.pushover_token = None
         self.pushover_user_key = None
-        self.message_prefix = "SG-bot: "
+        self.message_prefix = f"{message_prefix}: "
 
     def send_won(self, message):
         self.__send('won', message)

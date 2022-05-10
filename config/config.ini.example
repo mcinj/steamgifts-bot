@@ -22,6 +22,8 @@ wishlist.max_entries = 10000
 # time left in minutes of a giveaway for it to be considered
 wishlist.max_time_left = 300
 [NOTIFICATIONS]
+# a prefix for messages sent via notifications
+notification.prefix = SG-Bot
 # if we should send notifications via pushover
 pushover.enabled = false
 # your specific pushover token

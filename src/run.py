@@ -25,7 +25,7 @@ def run():
 
     config.read(file_name)
 
-    notification = Notification()
+    notification = Notification(config['NOTIFICATIONS'].get('notification.prefix'))
     pushover_enabled = config['NOTIFICATIONS'].getboolean('pushover.enabled')
     pushover_token = config['NOTIFICATIONS'].get('pushover.token')
     pushover_user_key = config['NOTIFICATIONS'].get('pushover.user_key')

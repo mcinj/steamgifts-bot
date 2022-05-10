@@ -48,6 +48,7 @@ class ConfigReader(ConfigParser):
             'wishlist.max_time_left': f"{randint(180,500)}"
         },
         'NOTIFICATIONS': {
+            'notification.prefix': '',
             'pushover.enabled': 'false',
             'pushover.token': '',
             'pushover.user_key': '',
