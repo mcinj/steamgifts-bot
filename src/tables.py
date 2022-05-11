@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil import tz
 
 from sqlalchemy import create_engine, Integer, String, Column, DateTime, Boolean, func, ForeignKey
 from sqlalchemy.orm import registry, relationship, Session
@@ -32,10 +33,17 @@ class TableNotification(Base):
     @classmethod
     def get_won_notifications_today(cls):
         with Session(engine) as session:
-            return session.query(TableNotification) \
-                .filter(func.DATE(TableNotification.created_at) == datetime.utcnow().date()) \
-                .filter_by(type='won') \
-                .all()
+            # with how filtering of datetimes works with a sqlite backend I couldn't figure out a better way
+            # to filter out the dates to local time when they are stored in utc in the db
+            within_3_days = session.query(TableNotification)\
+                .filter(func.DATE(TableNotification.created_at) >= (datetime.utcnow().date() - timedelta(days=1)))\
+                .filter(func.DATE(TableNotification.created_at) <= (datetime.utcnow().date() + timedelta(days=1)))\
+                .filter_by(type='won').all()
+            actual = []
+            for r in within_3_days:
+                if r.created_at.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal()) == datetime.now(tz=tz.tzlocal()).date():
+                    actual.append(r)
+            return actual
 
     @classmethod
     def get_won_notifications(cls):
