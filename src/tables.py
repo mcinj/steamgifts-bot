@@ -41,7 +41,7 @@ class TableNotification(Base):
                 .filter_by(type='won').all()
             actual = []
             for r in within_3_days:
-                if r.created_at.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal()) == datetime.now(tz=tz.tzlocal()).date():
+                if r.created_at.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal()).date() == datetime.now(tz=tz.tzlocal()).date():
                     actual.append(r)
             return actual
 
