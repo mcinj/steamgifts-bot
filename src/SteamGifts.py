@@ -143,8 +143,12 @@ class SteamGifts:
         return True
 
     def enter_giveaway(self, giveaway):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+        }
         payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': giveaway.giveaway_game_id}
-        entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie)
+        entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie,
+                              headers=headers)
         json_data = json.loads(entry.text)
 
         if json_data['type'] == 'success':
