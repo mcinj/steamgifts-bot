@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 from random import randint
+
 import log
 
 logger = log.get_logger(__name__)
@@ -35,10 +36,10 @@ class ConfigReader(ConfigParser):
         'DEFAULT':  {
             'cookie': '',
             'enabled': 'true',
-            'minimum_points': f"{randint(20, 100)}",
+            'minimum_points': f"{randint(20, 50)}",
             'max_entries': f"{randint(1000, 2500)}",
             'max_time_left': f"{randint(180,500)}",
-            'minimum_game_points': f"{randint(20, 100)}",
+            'minimum_game_points': "0",
             'blacklist_keywords': 'hentai,adult'
         },
         'WISHLIST': {

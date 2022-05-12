@@ -35,7 +35,7 @@ def run():
     try:
         cookie = config['DEFAULT'].get('cookie')
 
-        enabled = config['DEFAULT'].getboolean('enabled')
+        main_page_enabled = config['DEFAULT'].getboolean('enabled')
         minimum_points = config['DEFAULT'].getint('minimum_points')
         max_entries = config['DEFAULT'].getint('max_entries')
         max_time_left = config['DEFAULT'].getint('max_time_left')
@@ -45,7 +45,7 @@ def run():
         all_page = SteamGifts(cookie, 'All', False, minimum_points, max_entries,
                               max_time_left, minimum_game_points, blacklist, notification)
 
-        wishlist_enabled = config['WISHLIST'].getboolean('wishlist.enabled')
+        wishlist_page_enabled = config['WISHLIST'].getboolean('wishlist.enabled')
         wishlist_minimum_points = config['WISHLIST'].getint('wishlist.minimum_points')
         wishlist_max_entries = config['WISHLIST'].getint('wishlist.max_entries')
         wishlist_max_time_left = config['WISHLIST'].getint('wishlist.max_time_left')
@@ -53,15 +53,15 @@ def run():
         wishlist_page = SteamGifts(cookie, 'Wishlist', False, wishlist_minimum_points,
                                    wishlist_max_entries, wishlist_max_time_left, 0, '', notification)
 
-        if not enabled and not wishlist_enabled:
+        if not main_page_enabled and not wishlist_page_enabled:
             logger.error("Both 'Default' and 'Wishlist' configurations are disabled. Nothing will run. Exiting...")
             sleep(10)
             exit(-1)
 
         while True:
-            if wishlist_enabled:
+            if wishlist_page_enabled:
                 wishlist_page.start()
-            if enabled:
+            if main_page_enabled:
                 all_page.start()
 
             random_seconds = randint(1740, 3540)  # sometime between 29-59 minutes

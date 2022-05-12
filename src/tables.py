@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from dateutil import tz
 
+from dateutil import tz
 from sqlalchemy import create_engine, Integer, String, Column, DateTime, Boolean, func, ForeignKey
 from sqlalchemy.orm import registry, relationship, Session
 from sqlalchemy_utils import database_exists, create_database
