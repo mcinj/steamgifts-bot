@@ -67,7 +67,10 @@ class SteamGifts:
         return session
 
     def get_soup_from_page(self, url):
-        self.requests_retry_session().get(url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+        }
+        self.requests_retry_session().get(url, headers=headers)
         r = requests.get(url, cookies=self.cookie)
         soup = BeautifulSoup(r.text, 'html.parser')
         return soup
