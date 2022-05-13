@@ -19,7 +19,7 @@ class SteamGiftsException(Exception):
 
 
 class SteamGifts:
-    def __init__(self, cookie, gifts_type, pinned, min_points, max_entries,
+    def __init__(self, cookie, user_agent, gifts_type, pinned, min_points, max_entries,
                  max_time_left, minimum_game_points, blacklist, notification):
         self.contributor_level = None
         self.xsrf_token = None
@@ -27,6 +27,7 @@ class SteamGifts:
         self.cookie = {
             'PHPSESSID': cookie
         }
+        self.user_agent = user_agent
         self.gifts_type = gifts_type
         self.pinned = pinned
         self.min_points = int(min_points)
@@ -68,7 +69,7 @@ class SteamGifts:
 
     def get_soup_from_page(self, url):
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+            'User-Agent':  self.user_agent
         }
         self.requests_retry_session().get(url, headers=headers)
         r = requests.get(url, cookies=self.cookie)
@@ -144,7 +145,7 @@ class SteamGifts:
 
     def enter_giveaway(self, giveaway):
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+            'User-Agent': self.user_agent
         }
         payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': giveaway.giveaway_game_id}
         entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie,

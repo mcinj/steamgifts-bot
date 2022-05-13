@@ -34,7 +34,7 @@ def run():
 
     try:
         cookie = config['DEFAULT'].get('cookie')
-
+        user_agent = config['DEFAULT'].get('user_agent')
         main_page_enabled = config['DEFAULT'].getboolean('enabled')
         minimum_points = config['DEFAULT'].getint('minimum_points')
         max_entries = config['DEFAULT'].getint('max_entries')
@@ -42,7 +42,7 @@ def run():
         minimum_game_points = config['DEFAULT'].getint('minimum_game_points')
         blacklist = config['DEFAULT'].get('blacklist_keywords')
 
-        all_page = SteamGifts(cookie, 'All', False, minimum_points, max_entries,
+        all_page = SteamGifts(cookie, user_agent, 'All', False, minimum_points, max_entries,
                               max_time_left, minimum_game_points, blacklist, notification)
 
         wishlist_page_enabled = config['WISHLIST'].getboolean('wishlist.enabled')
@@ -50,7 +50,7 @@ def run():
         wishlist_max_entries = config['WISHLIST'].getint('wishlist.max_entries')
         wishlist_max_time_left = config['WISHLIST'].getint('wishlist.max_time_left')
 
-        wishlist_page = SteamGifts(cookie, 'Wishlist', False, wishlist_minimum_points,
+        wishlist_page = SteamGifts(cookie, user_agent, 'Wishlist', False, wishlist_minimum_points,
                                    wishlist_max_entries, wishlist_max_time_left, 0, '', notification)
 
         if not main_page_enabled and not wishlist_page_enabled:
