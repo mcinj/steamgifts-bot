@@ -40,7 +40,7 @@ class WebServerThread(threading.Thread):
 
             return app.response_class(generate(), mimetype='text/plain')
 
-        app.run(port=9647)
+        app.run(port=9647, host="0.0.0.0")
 
     def run(self):
         # Variable that stores the exception, if raised by someFunction
