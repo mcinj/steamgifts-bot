@@ -1,3 +1,4 @@
+import threading
 from random import randint
 from time import sleep
 
@@ -5,35 +6,57 @@ import log
 from ConfigReader import ConfigReader, ConfigException
 from SteamGifts import SteamGifts, SteamGiftsException
 from notification import Notification
+from threading import Thread
 
 
 logger = log.get_logger(__name__)
 
 
-def run():
-    logger.info("Starting Steamgifts bot.")
-    file_name = '../config/config.ini'
-    config = None
-    try:
-        config = ConfigReader(file_name)
-    except IOError:
-        txt = f"{file_name} doesn't exist. Rename {file_name}.example to {file_name} and fill out."
-        logger.warning(txt)
-        exit(-1)
-    except ConfigException as e:
-        logger.error(e)
-        exit(-1)
+class WebServerThread(threading.Thread):
 
-    config.read(file_name)
+    def run_webserver(self):
+        import http.server
+        import socketserver
 
-    notification = Notification(config['NOTIFICATIONS'].get('notification.prefix'))
-    pushover_enabled = config['NOTIFICATIONS'].getboolean('pushover.enabled')
-    pushover_token = config['NOTIFICATIONS'].get('pushover.token')
-    pushover_user_key = config['NOTIFICATIONS'].get('pushover.user_key')
-    if pushover_enabled:
-        notification.enable_pushover(pushover_token, pushover_user_key)
+        PORT = 8000
 
-    try:
+        class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
+            def do_GET(self):
+                self.path = 'index.html'
+                return http.server.SimpleHTTPRequestHandler.do_GET(self)
+
+        Handler = MyHttpRequestHandler
+
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            print("Http Server Serving at port", PORT)
+            httpd.serve_forever()
+
+    def run(self):
+        # Variable that stores the exception, if raised by someFunction
+        self.exc = None
+        try:
+            self.run_webserver()
+        except BaseException as e:
+            self.exc = e
+
+    def join(self):
+        threading.Thread.join(self)
+        # Since join() returns in caller thread
+        # we re-raise the caught exception
+        # if any was caught
+        if self.exc:
+            raise self.exc
+
+
+class GiveawayEntererThread(threading.Thread):
+
+    def __init__(self, config, notification):
+        Thread.__init__(self)
+        self.exc = None
+        self.config = config
+        self.notification = notification
+
+    def run_steam_gifts(self, config, notification):
         cookie = config['DEFAULT'].get('cookie')
         user_agent = config['DEFAULT'].get('user_agent')
         main_page_enabled = config['DEFAULT'].getboolean('enabled')
@@ -68,6 +91,57 @@ def run():
             random_seconds = randint(1740, 3540)  # sometime between 29-59 minutes
             logger.info(f"Going to sleep for {random_seconds / 60} minutes.")
             sleep(random_seconds)
+
+    def run(self):
+        # Variable that stores the exception, if raised by someFunction
+        self.exc = None
+        try:
+            self.run_steam_gifts(self.config, self.notification)
+        except BaseException as e:
+            self.exc = e
+
+    def join(self):
+        threading.Thread.join(self)
+        # Since join() returns in caller thread
+        # we re-raise the caught exception
+        # if any was caught
+        if self.exc:
+            raise self.exc
+
+
+def run():
+    logger.info("Starting Steamgifts bot.")
+    file_name = '../config/config.ini'
+    config = None
+    try:
+        config = ConfigReader(file_name)
+    except IOError:
+        txt = f"{file_name} doesn't exist. Rename {file_name}.example to {file_name} and fill out."
+        logger.warning(txt)
+        exit(-1)
+    except ConfigException as e:
+        logger.error(e)
+        exit(-1)
+
+    config.read(file_name)
+
+    notification = Notification(config['NOTIFICATIONS'].get('notification.prefix'))
+    pushover_enabled = config['NOTIFICATIONS'].getboolean('pushover.enabled')
+    pushover_token = config['NOTIFICATIONS'].get('pushover.token')
+    pushover_user_key = config['NOTIFICATIONS'].get('pushover.user_key')
+    if pushover_enabled:
+        notification.enable_pushover(pushover_token, pushover_user_key)
+    try:
+        g = GiveawayEntererThread(config, notification)
+        g.setName("Giveaway Enterer")
+        g.start()
+
+        w = WebServerThread()
+        w.setName("WebServer")
+        w.setDaemon(True)
+        w.start()
+
+        g.join()
     except SteamGiftsException as e:
         notification.send_error(e)
         sleep(5)
