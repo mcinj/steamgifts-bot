@@ -2,6 +2,8 @@ import threading
 from random import randint
 from time import sleep
 
+from pygtail import Pygtail
+
 import log
 from ConfigReader import ConfigReader, ConfigException
 from SteamGifts import SteamGifts, SteamGiftsException
@@ -15,21 +17,32 @@ logger = log.get_logger(__name__)
 class WebServerThread(threading.Thread):
 
     def run_webserver(self):
-        import http.server
-        import socketserver
+        from flask import Flask
+        from flask import render_template
 
-        PORT = 8000
+        app = Flask(__name__)
 
-        class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
-            def do_GET(self):
-                self.path = 'index.html'
-                return http.server.SimpleHTTPRequestHandler.do_GET(self)
+        @app.route("/")
+        def config():
+            with open('../config/config.ini', 'r') as f:
+                content = f.read()
+            return render_template('configuration.html', config=content)
 
-        Handler = MyHttpRequestHandler
+        @app.route("/log")
+        def logs():
+            return render_template('log.html')
 
-        with socketserver.TCPServer(("", PORT), Handler) as httpd:
-            print("Http Server Serving at port", PORT)
-            httpd.serve_forever()
+        @app.route("/stream")
+        def stream():
+            def generate():
+                with open('../config/debug.log') as f:
+                    while True:
+                        yield f.read()
+                        sleep(10)
+
+            return app.response_class(generate(), mimetype='text/plain')
+
+        app.run(port=9647)
 
     def run(self):
         # Variable that stores the exception, if raised by someFunction
@@ -138,6 +151,7 @@ def run():
 
         w = WebServerThread()
         w.setName("WebServer")
+        # if the giveaway thread dies then this daemon thread will die by definition
         w.setDaemon(True)
         w.start()
 

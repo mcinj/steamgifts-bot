@@ -25,8 +25,8 @@ def choose_user_agent():
     ]
     return user_agents[randrange(0, len(user_agents))]
 
-class ConfigReader(ConfigParser):
 
+class ConfigReader(ConfigParser):
 
     required_values = {
         'DEFAULT': {
@@ -44,6 +44,10 @@ class ConfigReader(ConfigParser):
         },
         'NOTIFICATIONS': {
             'pushover.enabled': ('true', 'false'),
+        },
+        'WEB': {
+            'web.enabled': ('true', 'false'),
+            'web.port': '%s' % (value_range(1, 65535))
         }
     }
     default_values = {
@@ -68,7 +72,10 @@ class ConfigReader(ConfigParser):
             'pushover.enabled': 'false',
             'pushover.token': '',
             'pushover.user_key': '',
-
+        },
+        'WEB': {
+            'web.enabled': 'false',
+            'web.port': '9647'
         }
     }
     deprecated_values = {
