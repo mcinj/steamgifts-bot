@@ -2,8 +2,6 @@ import threading
 from random import randint
 from time import sleep
 
-from pygtail import Pygtail
-
 import log
 from ConfigReader import ConfigReader, ConfigException
 from SteamGifts import SteamGifts, SteamGiftsException
