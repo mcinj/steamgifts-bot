@@ -4,5 +4,5 @@ venv/
 __pycache__/
 .idea
 config/config.ini
-config/debug.log
+config/*.log*
 config/sqlite.db

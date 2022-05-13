@@ -11,6 +11,7 @@ logger = log.get_logger(__name__)
 
 
 def run():
+    logger.info("Starting Steamgifts bot.")
     file_name = '../config/config.ini'
     config = None
     try:
