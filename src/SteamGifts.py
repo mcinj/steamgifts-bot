@@ -182,20 +182,22 @@ class SteamGifts:
 
             for item in unentered_game_list:
                 giveaway = Giveaway(item)
-                txt = f"〰️ {giveaway.game_name} - {giveaway.cost}P - {giveaway.game_entries} entries (w/ {giveaway.copies} " \
-                      f"copies) - Created {giveaway.time_created_string} ago with {giveaway.time_remaining_string} remaining."
+                txt = f"〰️ {giveaway.game_name} - {giveaway.cost}P - {giveaway.game_entries} entries " \
+                      f"(w/ {giveaway.copies} copies) - Created {giveaway.time_created_string} ago " \
+                      f"with {giveaway.time_remaining_string} remaining by {giveaway.user}."
                 logger.info(txt)
                 if giveaway.pinned and not self.pinned:
                     logger.info(f"〰️ Giveaway {giveaway.game_name} is pinned. Ignoring.")
                     continue
 
                 if self.points == 0 or self.points < self.min_points:
-                    txt = f"〰 We have {self.points} points, but we need {self.min_points} to start."
+                    txt = f"🟡 We have {self.points} points, but we need {self.min_points} to start."
                     logger.info(txt)
                     run = False
                     break
 
                 if not giveaway.cost:
+                    logger.error(f"Cost could not be determined for '{giveaway.game_name}'")
                     continue
                 if_enter_giveaway = self.should_we_enter_giveaway(giveaway)
                 if if_enter_giveaway:
