@@ -14,7 +14,7 @@ console_output.setLevel(logging.INFO)
 console_format = logging.Formatter(log_format)
 console_output.setFormatter(console_format)
 
-info_log_file = RotatingFileHandler('../config/info.log', maxBytes=10000, backupCount=10)
+info_log_file = RotatingFileHandler('../config/info.log', maxBytes=100000, backupCount=10)
 info_log_file.setLevel(logging.INFO)
 info_log_format = logging.Formatter(log_format)
 info_log_file.setFormatter(info_log_format)

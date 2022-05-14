@@ -75,7 +75,12 @@ class ConfigReader(ConfigParser):
         },
         'WEB': {
             'web.enabled': 'false',
-            'web.port': '9647'
+            'web.app_root': '/',
+            'web.port': '9647',
+            'web.ssl': 'true',
+            'web.basic_auth': 'true',
+            'web.basic_auth.username': 'admin',
+            'web.basic_auth.password': 'p@ssw0rd'
         }
     }
     deprecated_values = {

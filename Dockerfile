@@ -3,7 +3,7 @@ FROM python:3.9-alpine
 RUN mkdir -p /app
 WORKDIR /app
 
-RUN apk add tzdata --no-cache
+RUN apk add tzdata build-base libffi-dev py3-cffi --no-cache
 
 ENV TZ=America/New_York
 ENV VIRTUAL_ENV=/app/env

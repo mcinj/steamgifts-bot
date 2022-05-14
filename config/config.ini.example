@@ -32,3 +32,19 @@ pushover.enabled = false
 pushover.token =
 # your specific pushover user key
 pushover.user_key =
+
+[WEB]
+# should we enable the webserver which is just a simple, simple, simple webui to view the logs
+web.enabled = false
+# the port to run on
+web.port = 9547
+# the app root  / web folder / root / many other names . MUST contain a trailing '/'
+web.app_root = /
+# should this served up on http or https
+web.ssl = true
+# should we use basic auth
+web.basic_auth = true
+# basic auth username
+web.basic_auth.username = admin
+# basic auth password
+web.basic_auth.password = admin
