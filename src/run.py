@@ -14,6 +14,10 @@ logger = log.get_logger(__name__)
 
 class WebServerThread(threading.Thread):
 
+    def __init__(self):
+        Thread.__init__(self)
+        self.exc = None
+
     def run_webserver(self):
         from flask import Flask
         from flask import render_template
@@ -33,7 +37,7 @@ class WebServerThread(threading.Thread):
         @app.route("/stream")
         def stream():
             def generate():
-                with open('../config/debug.log') as f:
+                with open('../config/info.log') as f:
                     while True:
                         yield f.read()
                         sleep(10)
@@ -166,4 +170,16 @@ def run():
 
 
 if __name__ == '__main__':
+    logger.info("""
+    -------------------------------------------------------------------------------------
+       _____  _                                  _   __  _          ____          _   
+      / ____|| |                                (_) / _|| |        |  _ \        | |  
+     | (___  | |_  ___   __ _  _ __ ___    __ _  _ | |_ | |_  ___  | |_) |  ___  | |_ 
+      \___ \ | __|/ _ \ / _` || '_ ` _ \  / _` || ||  _|| __|/ __| |  _ <  / _ \ | __|
+      ____) || |_|  __/| (_| || | | | | || (_| || || |  | |_ \__ \ | |_) || (_) || |_ 
+     |_____/  \__|\___| \__,_||_| |_| |_| \__, ||_||_|   \__||___/ |____/  \___/  \__|
+                                           __/ |                                      
+                                          |___/                                       
+    -------------------------------------------------------------------------------------
+    """)
     run()

@@ -47,6 +47,7 @@ class Giveaway:
         self.time_created_timestamp = int(times[1]['data-timestamp'])
         self.time_created_string = times[1].text
         self.time_created_in_minutes = self.determine_time_in_minutes(times[1]['data-timestamp'])
+        logger.debug(f"Scraped Giveaway: {self}")
 
     def determine_contributor_level(self, contributor_level):
         if contributor_level is None:
@@ -104,3 +105,6 @@ class Giveaway:
             txt = f"Unable to determine cost or num copies of {game_name} with id {game_id}."
             logger.error(txt)
             return None, None
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)

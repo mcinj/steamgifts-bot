@@ -92,10 +92,9 @@ class SteamGifts:
             number_won = soup.select_one("a[title='Giveaways Won'] div").text
             won_notifications = TableNotification.get_won_notifications_today()
             if won_notifications and len(won_notifications) >= 1:
-                logger.debug("Win(s) detected, but we have already notified that there are won games waiting "
-                             "to be received. Doing nothing.")
+                logger.info("Win(s) detected, but we have already notified that there are won games waiting "
+                            "to be received. Doing nothing.")
             else:
-                logger.debug("Win(s) detected. Going to send a notification.")
                 logger.info(f"WINNER! You have {number_won} game(s) waiting to be claimed.")
                 self.notification.send_won(f"WINNER! You have {number_won} game(s) waiting to be claimed.")
         else:
@@ -106,39 +105,36 @@ class SteamGifts:
             return False
         if giveaway.time_created_in_minutes is None:
             return False
-        txt = f"{giveaway.game_name} - {giveaway.cost}P - {giveaway.game_entries} entries (w/ {giveaway.copies} " \
-              f"copies) - Created {giveaway.time_created_string} ago with {giveaway.time_remaining_string} remaining."
-        logger.debug(txt)
 
         if self.blacklist is not None and self.blacklist != ['']:
             for keyword in self.blacklist:
                 if giveaway.game_name.lower().find(keyword.lower()) != -1:
                     txt = f"Game {giveaway.game_name} contains the blacklisted keyword {keyword}"
-                    logger.debug(txt)
+                    logger.info(txt)
                     return False
         if giveaway.contributor_level is None or self.contributor_level < giveaway.contributor_level:
             txt = f"Game {giveaway.game_name} requires at least level {giveaway.contributor_level} contributor level " \
                   f"to enter. Your level: {self.contributor_level}"
-            logger.debug(txt)
+            logger.info(txt)
             return False
         if self.points - int(giveaway.cost) < 0:
             txt = f"⛔ Not enough points to enter: {giveaway.game_name}"
-            logger.debug(txt)
+            logger.info(txt)
             return False
         if giveaway.cost < self.minimum_game_points:
             txt = f"Game {giveaway.game_name} costs {giveaway.cost}P and is below your cutoff of " \
                   f"{self.minimum_game_points}P."
-            logger.debug(txt)
+            logger.info(txt)
             return False
         if giveaway.time_remaining_in_minutes > self.max_time_left:
             txt = f"Game {giveaway.game_name} has {giveaway.time_remaining_in_minutes} minutes left and is " \
                   f"above your cutoff of {self.max_time_left} minutes."
-            logger.debug(txt)
+            logger.info(txt)
             return False
         if giveaway.game_entries / giveaway.copies > self.max_entries:
             txt = f"Game {giveaway.game_name} has {giveaway.game_entries} entries and is above your cutoff " \
                   f"of {self.max_entries} entries."
-            logger.debug(txt)
+            logger.info(txt)
             return False
 
         return True
@@ -148,15 +144,16 @@ class SteamGifts:
             'User-Agent': self.user_agent
         }
         payload = {'xsrf_token': self.xsrf_token, 'do': 'entry_insert', 'code': giveaway.giveaway_game_id}
+        logger.debug(f"Sending enter giveaway payload: {payload}")
         entry = requests.post('https://www.steamgifts.com/ajax.php', data=payload, cookies=self.cookie,
                               headers=headers)
         json_data = json.loads(entry.text)
 
         if json_data['type'] == 'success':
-            logger.debug(f"Successfully entered giveaway {giveaway.giveaway_game_id}")
+            logger.debug(f"Successfully entered giveaway {giveaway.giveaway_game_id}: {json_data}")
             return True
         else:
-            logger.error(f"Failed entering giveaway {giveaway.giveaway_game_id}")
+            logger.error(f"Failed entering giveaway {giveaway.giveaway_game_id}: {json_data}")
             return False
 
     def evaluate_giveaways(self, page=1):
@@ -185,7 +182,11 @@ class SteamGifts:
 
             for item in unentered_game_list:
                 giveaway = Giveaway(item)
+                txt = f"{giveaway.game_name} - {giveaway.cost}P - {giveaway.game_entries} entries (w/ {giveaway.copies} " \
+                      f"copies) - Created {giveaway.time_created_string} ago with {giveaway.time_remaining_string} remaining."
+                logger.info(txt)
                 if giveaway.pinned and not self.pinned:
+                    logger.info(f"Giveaway {giveaway.game_name} is pinned. Ignoring.")
                     continue
 
                 if self.points == 0 or self.points < self.min_points:
