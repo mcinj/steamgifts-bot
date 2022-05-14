@@ -117,18 +117,20 @@ class GiveawayEntererThread(threading.Thread):
                                    wishlist_max_entries, wishlist_max_time_left, 0, '', notification)
 
         if not main_page_enabled and not wishlist_page_enabled:
-            logger.error("Both 'Default' and 'Wishlist' configurations are disabled. Nothing will run. Exiting...")
+            logger.error("⁉️ Both 'Default' and 'Wishlist' configurations are disabled. Nothing will run. Exiting...")
             sleep(10)
             exit(-1)
 
         while True:
+            logger.info("🟢 Evaluating giveaways.")
             if wishlist_page_enabled:
                 wishlist_page.start()
             if main_page_enabled:
                 all_page.start()
 
+            logger.info("🔴 All giveaways evaluated.")
             random_seconds = randint(1740, 3540)  # sometime between 29-59 minutes
-            logger.info(f"Going to sleep for {random_seconds / 60} minutes.")
+            logger.info(f"🛋 Going to sleep for {random_seconds / 60} minutes.")
             sleep(random_seconds)
 
     def run(self):
