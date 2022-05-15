@@ -18,7 +18,7 @@ class SteamGiftsException(Exception):
     pass
 
 
-class SteamGifts:
+class EnterGiveaways:
     def __init__(self, cookie, user_agent, gifts_type, pinned, min_points, max_entries,
                  max_time_left, minimum_game_points, blacklist, notification):
         self.contributor_level = None
