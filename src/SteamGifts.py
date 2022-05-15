@@ -182,7 +182,7 @@ class SteamGifts:
 
             for item in unentered_game_list:
                 giveaway = Giveaway(item)
-                txt = f"〰️ {giveaway.game_name} - {giveaway.cost}P - {giveaway.game_entries} entries " \
+                txt = f"〰 {giveaway.game_name} - {giveaway.cost}P - {giveaway.game_entries} entries " \
                       f"(w/ {giveaway.copies} copies) - Created {giveaway.time_created_string} ago " \
                       f"with {giveaway.time_remaining_string} remaining by {giveaway.user}."
                 logger.info(txt)

@@ -8,7 +8,6 @@ logger = log.get_logger(__name__)
 class Giveaway:
 
     def __init__(self, soup_item):
-        self.soup_item = soup_item
         self.steam_app_id = None
         self.steam_url = None
         self.game_name = None
@@ -35,7 +34,7 @@ class Giveaway:
         self.giveaway_uri = soup_item.select_one('a.giveaway__heading__name')['href']
         pin_class = soup_item.parent.parent.get("class")
         self.pinned = pin_class is not None and len(pin_class) > 0 and pin_class[0].find('pinned') != -1
-        self.cost, self.copies = self.determine_cost_and_copies(self.soup_item, self.game_name, self.giveaway_game_id)
+        self.cost, self.copies = self.determine_cost_and_copies(soup_item, self.game_name, self.giveaway_game_id)
         self.game_entries = int(soup_item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
         contributor_level = soup_item.select_one('div[title="Contributor Level"]')
         self.contributor_level = self.determine_contributor_level(contributor_level)

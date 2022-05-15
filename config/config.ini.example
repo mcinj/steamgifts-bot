@@ -47,4 +47,4 @@ web.basic_auth = true
 # basic auth username
 web.basic_auth.username = admin
 # basic auth password
-web.basic_auth.password = admin
+web.basic_auth.password = ChangeMe
