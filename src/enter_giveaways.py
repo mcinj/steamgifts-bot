@@ -69,7 +69,7 @@ class EnterGiveaways:
 
     def get_soup_from_page(self, url):
         headers = {
-            'User-Agent':  self.user_agent
+            'User-Agent': self.user_agent
         }
         self.requests_retry_session().get(url, headers=headers)
         r = requests.get(url, cookies=self.cookie)

@@ -36,6 +36,8 @@ pushover.user_key =
 [WEB]
 # should we enable the webserver which is just a simple, simple, simple webui to view the logs
 web.enabled = false
+# the host to listen on. localhost or 0.0.0.0 are the two common options
+web.host = localhost
 # the port to run on
 web.port = 9547
 # the app root  / web folder / root / many other names . MUST contain a trailing '/'

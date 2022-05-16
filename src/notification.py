@@ -1,10 +1,8 @@
 import http.client
 import urllib
 
-from sqlalchemy.orm import Session
-
-from tables import TableNotification
 import log
+from tables import TableNotification
 
 logger = log.get_logger(__name__)
 

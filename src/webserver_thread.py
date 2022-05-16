@@ -15,6 +15,7 @@ class WebServerThread(threading.Thread):
         Thread.__init__(self)
         self.exc = None
         self.config = config
+        self.host = config['WEB'].get('web.host')
         self.port = config['WEB'].getint('web.port')
         self.ssl = config['WEB'].getboolean('web.ssl')
         self.enabled = config['WEB'].getboolean('web.enabled')
@@ -63,9 +64,9 @@ class WebServerThread(threading.Thread):
         if self.enabled:
             logger.info("Webserver Enabled. Running")
             if self.ssl:
-                app.run(port=self.port, host="0.0.0.0", ssl_context='adhoc')
+                app.run(port=self.port, host=self.host, ssl_context='adhoc')
             else:
-                app.run(port=self.port, host="0.0.0.0")
+                app.run(port=self.port, host=self.host)
         else:
             logger.info("Webserver NOT Enabled.")
 

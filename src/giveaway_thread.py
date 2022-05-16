@@ -1,7 +1,11 @@
+import datetime
 import threading
+from datetime import timedelta, datetime
 from random import randint
 from threading import Thread
 from time import sleep
+
+from dateutil import tz
 
 import log
 from enter_giveaways import EnterGiveaways
@@ -52,7 +56,9 @@ class GiveawayThread(threading.Thread):
 
             logger.info("🔴 All giveaways evaluated.")
             random_seconds = randint(1740, 3540)  # sometime between 29-59 minutes
-            logger.info(f"🛋 Going to sleep for {random_seconds / 60} minutes.")
+            when_to_start_again = datetime.now(tz=tz.tzlocal()) + timedelta(seconds=random_seconds)
+            logger.info(f"🛋 Going to sleep for {random_seconds / 60} minutes. "
+                        f"Will start again at {when_to_start_again}")
             sleep(random_seconds)
 
     def run(self):

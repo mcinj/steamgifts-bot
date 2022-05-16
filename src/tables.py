@@ -35,13 +35,14 @@ class TableNotification(Base):
         with Session(engine) as session:
             # with how filtering of datetimes works with a sqlite backend I couldn't figure out a better way
             # to filter out the dates to local time when they are stored in utc in the db
-            within_3_days = session.query(TableNotification)\
-                .filter(func.DATE(TableNotification.created_at) >= (datetime.utcnow().date() - timedelta(days=1)))\
-                .filter(func.DATE(TableNotification.created_at) <= (datetime.utcnow().date() + timedelta(days=1)))\
+            within_3_days = session.query(TableNotification) \
+                .filter(func.DATE(TableNotification.created_at) >= (datetime.utcnow().date() - timedelta(days=1))) \
+                .filter(func.DATE(TableNotification.created_at) <= (datetime.utcnow().date() + timedelta(days=1))) \
                 .filter_by(type='won').all()
             actual = []
             for r in within_3_days:
-                if r.created_at.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal()).date() == datetime.now(tz=tz.tzlocal()).date():
+                if r.created_at.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal()).date() == datetime.now(
+                        tz=tz.tzlocal()).date():
                     actual.append(r)
             return actual
 

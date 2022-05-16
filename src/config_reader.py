@@ -27,7 +27,6 @@ def choose_user_agent():
 
 
 class ConfigReader(ConfigParser):
-
     required_values = {
         'DEFAULT': {
             'enabled': ('true', 'false'),
@@ -51,13 +50,13 @@ class ConfigReader(ConfigParser):
         }
     }
     default_values = {
-        'DEFAULT':  {
+        'DEFAULT': {
             'cookie': '',
             'user_agent': f"{choose_user_agent()}",
             'enabled': 'true',
             'minimum_points': f"{randint(20, 50)}",
             'max_entries': f"{randint(1000, 2500)}",
-            'max_time_left': f"{randint(180,500)}",
+            'max_time_left': f"{randint(180, 500)}",
             'minimum_game_points': "0",
             'blacklist_keywords': 'hentai,adult'
         },
@@ -65,7 +64,7 @@ class ConfigReader(ConfigParser):
             'wishlist.enabled': 'true',
             'wishlist.minimum_points': '1',
             'wishlist.max_entries': f"{randint(10000, 100000)}",
-            'wishlist.max_time_left': f"{randint(180,500)}"
+            'wishlist.max_time_left': f"{randint(180, 500)}"
         },
         'NOTIFICATIONS': {
             'notification.prefix': '',
@@ -75,6 +74,7 @@ class ConfigReader(ConfigParser):
         },
         'WEB': {
             'web.enabled': 'false',
+            'web.host': '0.0.0.0',
             'web.app_root': '/',
             'web.port': '9647',
             'web.ssl': 'true',
@@ -127,11 +127,11 @@ class ConfigReader(ConfigParser):
             for key, values in keys.items():
                 if key not in self[section] or self[section][key] == '':
                     raise ConfigException((
-                                              'Missing value for "%s" under section "%s" in ' +
-                                              'the config file') % (key, section))
+                                                  'Missing value for "%s" under section "%s" in ' +
+                                                  'the config file') % (key, section))
 
                 if values:
                     if self[section][key] not in values:
                         raise ConfigException((
-                                                  'Invalid value for "%s" under section "%s" in ' +
-                                                  'the config file') % (key, section))
+                                                      'Invalid value for "%s" under section "%s" in ' +
+                                                      'the config file') % (key, section))
