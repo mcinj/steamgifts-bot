@@ -17,19 +17,7 @@
       </div>
     </header>
     <div class="container">
-      <pre id="output"></pre>
-<script>
-    var output = document.getElementById('output');
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '{{ url_for('stream') }}');
-    xhr.send();
-    output.textContent = xhr.responseText;
-
-    setInterval(function() {
-        output.textContent = xhr.responseText;
-    }, 10000);
-</script>
+      <pre id="output">{{content}}</pre>
     </div>
   </body>
 </html>

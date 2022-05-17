@@ -176,7 +176,7 @@ class EnterGiveaways:
             # game_list = soup.find_all('div', {'class': 'giveaway__row-inner-wrap'})
 
             if not len(unentered_game_list) or (all_games_list_count == pinned_giveaway_count):
-                txt = f"〰️ We have run out of gifts to consider."
+                txt = f"🟡 We have run out of gifts to consider."
                 logger.info(txt)
                 break
 

@@ -41,21 +41,13 @@ class WebServerThread(threading.Thread):
         def config():
             with open('../config/config.ini', 'r') as f:
                 content = f.read()
-            return render_template('configuration.html', config=content)
+            return render_template('configuration.html', content=content)
 
         @app.route(f"{self.app_root}log")
         def logs():
-            return render_template('log.html')
-
-        @app.route(f"{self.app_root}stream")
-        def stream():
-            def generate():
-                with open('../config/info.log') as f:
-                    while True:
-                        yield f.read()
-                        sleep(10)
-
-            return app.response_class(generate(), mimetype='text/plain')
+            with open('../config/info.log', 'r') as f:
+                content = f.read()
+                return render_template('log.html', content=content)
 
         @app.route(f"{self.app_root}alive")
         def alive():
