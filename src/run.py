@@ -5,26 +5,30 @@ from config_reader import ConfigReader, ConfigException
 from enter_giveaways import SteamGiftsException
 from giveaway_thread import GiveawayThread
 from notification import Notification
+from database import run_migrations, create_engine
 from webserver_thread import WebServerThread
 
 logger = log.get_logger(__name__)
+config_file_name = '../config/config.ini'
+db_url = 'sqlite:///../config/sqlite.db'
+alembic_migration_files = '../alembic'
 
 
 def run():
     logger.info("Starting Steamgifts bot.")
-    file_name = '../config/config.ini'
+
     config = None
     try:
-        config = ConfigReader(file_name)
+        config = ConfigReader(config_file_name)
     except IOError:
-        txt = f"{file_name} doesn't exist. Rename {file_name}.example to {file_name} and fill out."
+        txt = f"{config_file_name} doesn't exist. Rename {config_file_name}.example to {config_file_name} and fill out."
         logger.warning(txt)
         exit(-1)
     except ConfigException as e:
         logger.error(e)
         exit(-1)
 
-    config.read(file_name)
+    config.read(config_file_name)
 
     notification = Notification(config['NOTIFICATIONS'].get('notification.prefix'))
     pushover_enabled = config['NOTIFICATIONS'].getboolean('pushover.enabled')
@@ -68,4 +72,6 @@ if __name__ == '__main__':
                                           |___/                                       
     -------------------------------------------------------------------------------------
     """)
+    run_migrations(alembic_migration_files, db_url)
+    create_engine(db_url)
     run()

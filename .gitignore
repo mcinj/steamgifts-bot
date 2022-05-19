@@ -6,3 +6,4 @@ __pycache__/
 config/config.ini
 config/*.log*
 config/sqlite.db
+.DS_STORE

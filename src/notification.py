@@ -2,7 +2,7 @@ import http.client
 import urllib
 
 import log
-from tables import TableNotification
+from database import NotificationHelper
 
 logger = log.get_logger(__name__)
 
@@ -48,4 +48,4 @@ class Notification:
         else:
             logger.error(f"Pushover notification failed. Code {response.getcode()}: {response.read().decode()}")
             success = False
-        TableNotification.insert(type_of_error, f"{message}", 'pushover', success)
+        NotificationHelper.insert(type_of_error, f"{message}", 'pushover', success)

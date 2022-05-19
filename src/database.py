@@ -1,27 +1,35 @@
 from datetime import datetime, timedelta
 
+import sqlalchemy
+from alembic import command
+from alembic.config import Config
 from dateutil import tz
-from sqlalchemy import create_engine, Integer, String, Column, DateTime, Boolean, func, ForeignKey
-from sqlalchemy.orm import registry, relationship, Session
-from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
-mapper_registry = registry()
-mapper_registry.metadata
-Base = mapper_registry.generate_base()
-engine = create_engine('sqlite:///../config/sqlite.db', echo=False)
+import log
+from models import TableNotification, TableGiveaway, TableSteamItem
+
+logger = log.get_logger(__name__)
+engine = None
 
 
-class TableNotification(Base):
-    __tablename__ = 'notification'
-    id = Column(Integer, primary_key=True, nullable=False)
-    type = Column(String(50), nullable=False)
-    message = Column(String(300), nullable=False)
-    medium = Column(String(50), nullable=False)
-    success = Column(Boolean, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+def create_engine(db_url: str):
+    global engine
+    if not engine:
+        engine = sqlalchemy.create_engine(db_url, echo=False)
+        engine.connect()
 
-    __mapper_args__ = {"eager_defaults": True}
+
+def run_migrations(script_location: str, dsn: str) -> None:
+    logger.info('Running DB migrations in %r on %r', script_location, dsn)
+    alembic_cfg = Config()
+    alembic_cfg.set_main_option('script_location', script_location)
+    alembic_cfg.set_main_option('sqlalchemy.url', dsn)
+    command.upgrade(alembic_cfg, 'head')
+
+
+class NotificationHelper:
 
     @classmethod
     def insert(cls, type_of_error, message, medium, success):
@@ -61,37 +69,7 @@ class TableNotification(Base):
                 .all()
 
 
-class TableSteamItem(Base):
-    __tablename__ = 'steam_item'
-    steam_id = Column(String(15), primary_key=True, nullable=False)
-    game_name = Column(String(200), nullable=False)
-    steam_url = Column(String(100), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    giveaways = relationship("TableGiveaway", back_populates="steam_item")
-
-
-class TableGiveaway(Base):
-    __tablename__ = 'giveaway'
-    giveaway_id = Column(String(10), primary_key=True, nullable=False)
-    steam_id = Column(Integer, ForeignKey('steam_item.steam_id'), primary_key=True)
-    giveaway_uri = Column(String(200), nullable=False)
-    user = Column(String(40), nullable=False)
-    giveaway_created_at = Column(DateTime(timezone=True), nullable=False)
-    giveaway_ended_at = Column(DateTime(timezone=True), nullable=False)
-    cost = Column(Integer(), nullable=False)
-    copies = Column(Integer(), nullable=False)
-    contributor_level = Column(Integer(), nullable=False)
-    entered = Column(Boolean(), nullable=False)
-    won = Column(Boolean(), nullable=False)
-    game_entries = Column(Integer(), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    steam_item = relationship("TableSteamItem", back_populates="giveaways")
-
-    __mapper_args__ = {"eager_defaults": True}
+class GiveawayHelper:
 
     @classmethod
     def unix_timestamp_to_utc_datetime(cls, timestamp):
@@ -122,8 +100,8 @@ class TableGiveaway(Base):
                 steam_id=steam_id,
                 giveaway_uri=giveaway.giveaway_uri,
                 user=giveaway.user,
-                giveaway_created_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
-                giveaway_ended_at=TableGiveaway.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
+                giveaway_created_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
+                giveaway_ended_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
                 cost=giveaway.cost,
                 copies=giveaway.copies,
                 contributor_level=giveaway.contributor_level,
@@ -135,9 +113,9 @@ class TableGiveaway(Base):
 
     @classmethod
     def upsert_giveaway(cls, giveaway, entered):
-        result = TableGiveaway.get_by_ids(giveaway)
+        result = GiveawayHelper.get_by_ids(giveaway)
         if not result:
-            TableGiveaway.insert(giveaway, entered)
+            GiveawayHelper.insert(giveaway, entered)
         else:
             with Session(engine) as session:
                 g = TableGiveaway(
@@ -155,13 +133,3 @@ class TableGiveaway(Base):
                     game_entries=giveaway.game_entries)
                 session.merge(g)
                 session.commit()
-
-
-if not database_exists(engine.url):
-    create_database(engine.url)
-    # emitting DDL
-    mapper_registry.metadata.create_all(engine)
-    Base.metadata.create_all(engine)
-else:
-    # Connect the database if exists.
-    engine.connect()

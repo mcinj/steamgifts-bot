@@ -8,8 +8,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
 import log
+from database import NotificationHelper, GiveawayHelper
 from giveaway import Giveaway
-from tables import TableNotification, TableGiveaway
 
 logger = log.get_logger(__name__)
 
@@ -90,7 +90,7 @@ class EnterGiveaways:
         won = soup.select("a[title='Giveaways Won'] div")
         if won:
             number_won = soup.select_one("a[title='Giveaways Won'] div").text
-            won_notifications = TableNotification.get_won_notifications_today()
+            won_notifications = NotificationHelper.get_won_notifications_today()
             if won_notifications and len(won_notifications) >= 1:
                 logger.info("🆒️ Win(s) detected, but we have already notified that there are won games waiting "
                             "to be received. Doing nothing.")
@@ -203,15 +203,15 @@ class EnterGiveaways:
                 if if_enter_giveaway:
                     res = self.enter_giveaway(giveaway)
                     if res:
-                        TableGiveaway.upsert_giveaway(giveaway, True)
+                        GiveawayHelper.upsert_giveaway(giveaway, True)
                         self.points -= int(giveaway.cost)
                         txt = f"✅ Entered giveaway '{giveaway.game_name}'"
                         logger.info(txt)
                         sleep(randint(4, 15))
                     else:
-                        TableGiveaway.upsert_giveaway(giveaway, False)
+                        GiveawayHelper.upsert_giveaway(giveaway, False)
                 else:
-                    TableGiveaway.upsert_giveaway(giveaway, False)
+                    GiveawayHelper.upsert_giveaway(giveaway, False)
                 # if we are on any filter type except New and we get to a giveaway that exceeds our
                 # max time left amount, then we don't need to continue to look at giveaways as any
                 # after this point will also exceed the max time left
