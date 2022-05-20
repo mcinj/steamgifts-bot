@@ -7,11 +7,11 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-import log
-from database import NotificationHelper, GiveawayHelper
-from giveaway import Giveaway
+from .log import get_logger
+from .database import NotificationHelper, GiveawayHelper
+from .giveaway import Giveaway
 
-logger = log.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class SteamGiftsException(Exception):

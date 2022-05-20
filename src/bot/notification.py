@@ -1,10 +1,10 @@
 import http.client
 import urllib
 
-import log
-from database import NotificationHelper
+from .log import get_logger
+from .database import NotificationHelper
 
-logger = log.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class Notification:

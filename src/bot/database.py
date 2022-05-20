@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 
 import sqlalchemy
@@ -8,18 +9,15 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import database_exists
 
-import log
-from models import TableNotification, TableGiveaway, TableSteamItem
+from .log import get_logger
+from .models import TableNotification, TableGiveaway, TableSteamItem
 
-logger = log.get_logger(__name__)
-engine = None
+logger = get_logger(__name__)
+engine = sqlalchemy.create_engine(f"{os.getenv('BOT_DB_URL', 'sqlite:///./config/sqlite.db')}", echo=False)
+engine.connect()
 
 
 def create_engine(db_url: str):
-    global engine
-    if not engine:
-        engine = sqlalchemy.create_engine(db_url, echo=False)
-        engine.connect()
     return engine
 
 
@@ -47,9 +45,6 @@ def run_migrations(script_location: str, db_url: str) -> None:
             command.stamp(alembic_cfg, alembic_first_ref)
         logger.debug("Running migration.")
         command.upgrade(alembic_cfg, 'head')
-
-
-
 
 
 class NotificationHelper:

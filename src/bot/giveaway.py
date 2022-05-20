@@ -1,8 +1,8 @@
 import re
-import log
+from .log import get_logger
 import time
 
-logger = log.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class Giveaway:

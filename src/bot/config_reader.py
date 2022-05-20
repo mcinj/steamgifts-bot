@@ -1,9 +1,9 @@
 from configparser import ConfigParser
 from random import randint, randrange
 
-import log
+from .log import get_logger
 
-logger = log.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class ConfigException(Exception):

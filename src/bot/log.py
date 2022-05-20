@@ -1,11 +1,12 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 # log info level logs to stdout and debug to debug file
 
 log_format = "%(levelname)s %(asctime)s - %(message)s"
 logging.basicConfig(
-    handlers=[RotatingFileHandler('../config/debug.log', maxBytes=500000, backupCount=10)],
+    handlers=[RotatingFileHandler(f"{os.getenv('BOT_CONFIG_DIR', './config')}/debug.log", maxBytes=500000, backupCount=10)],
     level=logging.DEBUG,
     format=log_format)
 
@@ -14,7 +15,7 @@ console_output.setLevel(logging.INFO)
 console_format = logging.Formatter(log_format)
 console_output.setFormatter(console_format)
 
-info_log_file = RotatingFileHandler('../config/info.log', maxBytes=100000, backupCount=10)
+info_log_file = RotatingFileHandler(f"{os.getenv('BOT_CONFIG_DIR', './config')}/info.log", maxBytes=100000, backupCount=10)
 info_log_file.setLevel(logging.INFO)
 info_log_format = logging.Formatter(log_format)
 info_log_file.setFormatter(info_log_format)

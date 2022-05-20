@@ -20,8 +20,7 @@ The bot is specially designed for [SteamGifts.com](https://www.steamgifts.com/)
 python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
-cd src
-python run.py
+python main.py
 ```
 
 ### Docker

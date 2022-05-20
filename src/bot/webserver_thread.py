@@ -1,12 +1,11 @@
 import threading
 from threading import Thread
-from time import sleep
 
 from flask_basicauth import BasicAuth
 
-import log
+from .log import get_logger
 
-logger = log.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class WebServerThread(threading.Thread):

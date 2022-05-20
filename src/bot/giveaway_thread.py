@@ -7,10 +7,10 @@ from time import sleep
 
 from dateutil import tz
 
-import log
-from enter_giveaways import EnterGiveaways
+from .log import get_logger
+from .enter_giveaways import EnterGiveaways
 
-logger = log.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class GiveawayThread(threading.Thread):
