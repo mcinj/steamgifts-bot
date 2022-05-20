@@ -6,6 +6,7 @@ from alembic.config import Config
 from dateutil import tz
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sqlalchemy_utils import database_exists
 
 import log
 from models import TableNotification, TableGiveaway, TableSteamItem
@@ -19,14 +20,36 @@ def create_engine(db_url: str):
     if not engine:
         engine = sqlalchemy.create_engine(db_url, echo=False)
         engine.connect()
+    return engine
 
 
-def run_migrations(script_location: str, dsn: str) -> None:
-    logger.info('Running DB migrations in %r on %r', script_location, dsn)
+def run_migrations(script_location: str, db_url: str) -> None:
+    logger.debug('Running DB migrations in %r on %r', script_location, db_url)
     alembic_cfg = Config()
     alembic_cfg.set_main_option('script_location', script_location)
-    alembic_cfg.set_main_option('sqlalchemy.url', dsn)
-    command.upgrade(alembic_cfg, 'head')
+    alembic_cfg.set_main_option('sqlalchemy.url', db_url)
+
+    if not database_exists(db_url):
+        logger.debug(f"'{db_url}' does not exist. Running normal migration to create db and tables." )
+        command.upgrade(alembic_cfg, 'head')
+    if database_exists(db_url):
+        logger.debug(f"'{db_url} exists.")
+        e = create_engine(db_url)
+        insp = sqlalchemy.inspect(e)
+        alembic_version_table_name = 'alembic_version'
+        has_alembic_table = insp.has_table(alembic_version_table_name)
+        if has_alembic_table:
+            logger.debug(f"Table '{alembic_version_table_name}' exists.")
+        else:
+            logger.debug(f"Table '{alembic_version_table_name}' doesn't exist so assuming it was created pre-alembic "
+                         f"setup. Setting the version to the first version created prior to alembic setup.")
+            alembic_first_ref = '1da33402b659'
+            command.stamp(alembic_cfg, alembic_first_ref)
+        logger.debug("Running migration.")
+        command.upgrade(alembic_cfg, 'head')
+
+
+
 
 
 class NotificationHelper:
