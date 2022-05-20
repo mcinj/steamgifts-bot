@@ -26,6 +26,7 @@ class Giveaway:
         self.time_created_string = None
         self.time_created_in_minutes = None
 
+        logger.debug(f"Giveaway html: {soup_item}")
         icons = soup_item.select('a.giveaway__icon')
         self.steam_url = icons[0]['href']
         self.steam_app_id = self.get_steam_app_id(self.steam_url)
