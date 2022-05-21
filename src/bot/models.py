@@ -42,7 +42,6 @@ class TableGiveaway(Base):
     copies = Column(Integer(), nullable=False)
     contributor_level = Column(Integer(), nullable=False)
     entered = Column(Boolean(), nullable=False)
-    won = Column(Boolean(), nullable=False)
     game_entries = Column(Integer(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

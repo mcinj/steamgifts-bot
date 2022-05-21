@@ -124,7 +124,6 @@ class GiveawayHelper:
                 copies=giveaway.copies,
                 contributor_level=giveaway.contributor_level,
                 entered=entered,
-                won=False,
                 game_entries=giveaway.game_entries)
             session.add(g)
             session.commit()
@@ -147,7 +146,6 @@ class GiveawayHelper:
                     copies=giveaway.copies,
                     contributor_level=giveaway.contributor_level,
                     entered=entered,
-                    won=False,
                     game_entries=giveaway.game_entries)
                 session.merge(g)
                 session.commit()

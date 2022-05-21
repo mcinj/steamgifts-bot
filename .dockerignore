@@ -2,5 +2,4 @@ config/config.ini
 config/debug.log
 config/sqlite.db
 config/info.log
-alembic.ini
 README.ini
