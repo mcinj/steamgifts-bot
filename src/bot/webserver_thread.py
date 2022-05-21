@@ -1,3 +1,4 @@
+import os
 import threading
 from threading import Thread
 
@@ -38,13 +39,19 @@ class WebServerThread(threading.Thread):
 
         @app.route(f"{self.app_root}")
         def config():
-            with open('../config/config.ini', 'r') as f:
+            with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/config.ini", 'r') as f:
                 content = f.read()
             return render_template('configuration.html', content=content)
 
-        @app.route(f"{self.app_root}log")
-        def logs():
-            with open('../config/info.log', 'r') as f:
+        @app.route(f"{self.app_root}log_info")
+        def log_info():
+            with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/info.log", 'r') as f:
+                content = f.read()
+                return render_template('log.html', content=content)
+
+        @app.route(f"{self.app_root}log_debug")
+        def log_debug():
+            with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/debug.log", 'r') as f:
                 content = f.read()
                 return render_template('log.html', content=content)
 
