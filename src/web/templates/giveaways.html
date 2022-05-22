@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{name}} Steamgifts Bot DB View</title>
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+</head>
+<body>
+<header>
+    <div class="container">
+        <h1 class="logo">Steamgifts Bot</h1>
+        <strong>
+            <nav>
+                <ul class="menu">
+                    <li><a href="{{ url_for('config') }}">Config</a></li>
+                    <li><a href="{{ url_for('log_info') }}">Info Logs</a></li>
+                    <li><a href="{{ url_for('log_debug') }}">Debug Logs</a></li>
+                    <li><a href="{{ url_for('db_giveaways') }}">Giveaways</a></li>
+                    <li><a href="{{ url_for('db_notifications') }}">Notifications</a></li>
+                </ul>
+            </nav>
+        </strong>
+    </div>
+</header>
+<div class="container">
+    <table>
+        <thead>
+        <tr>
+            <th>Giveaway ID</th>
+            <th>Steam ID</th>
+            <th>Giveaway URI</th>
+            <th>Name</th>
+            <th>Steam URL</th>
+            <th>User</th>
+            <th>Giveaway Created At</th>
+            <th>Giveaway Ended At</th>
+            <th>Cost</th>
+            <th>Copies</th>
+            <th>Contributor Level</th>
+            <th>Entered</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in content %}
+        <tr>
+            <td>{{row.giveaway_id}}</td>
+            <td>{{row.steam_id}}</td>
+            <td>{{row.giveaway_uri}}</td>
+            <td>{{row.steam_item.game_name}}</td>
+            <td>{{row.steam_item.steam_url}}</td>
+            <td>{{row.user}}</td>
+            <td>{{row.giveaway_created_at}}</td>
+            <td>{{row.giveaway_ended_at}}</td>
+            <td>{{row.cost}}</td>
+            <td>{{row.copies}}</td>
+            <td>{{row.contributor_level}}</td>
+            <td>{{row.entered}}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

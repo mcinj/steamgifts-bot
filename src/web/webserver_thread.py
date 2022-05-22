@@ -4,7 +4,8 @@ from threading import Thread
 
 from flask_basicauth import BasicAuth
 
-from .log import get_logger
+from src.bot.database import NotificationHelper, GiveawayHelper
+from src.bot.log import get_logger
 
 logger = get_logger(__name__)
 
@@ -15,6 +16,7 @@ class WebServerThread(threading.Thread):
         Thread.__init__(self)
         self.exc = None
         self.config = config
+        self.name = config['NOTIFICATIONS'].get('notification.prefix')
         self.host = config['WEB'].get('web.host')
         self.port = config['WEB'].getint('web.port')
         self.ssl = config['WEB'].getboolean('web.ssl')
@@ -41,23 +43,31 @@ class WebServerThread(threading.Thread):
         def config():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/config.ini", 'r') as f:
                 content = f.read()
-            return render_template('configuration.html', content=content)
+            return render_template('configuration.html', name=self.name, content=content)
 
         @app.route(f"{self.app_root}log_info")
         def log_info():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/info.log", 'r') as f:
                 content = f.read()
-                return render_template('log.html', content=content)
+                return render_template('log.html', name=self.name, log_type='info', content=content)
 
         @app.route(f"{self.app_root}log_debug")
         def log_debug():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/debug.log", 'r') as f:
                 content = f.read()
-                return render_template('log.html', content=content)
+                return render_template('log.html', name=self.name, log_type='debug', content=content)
 
         @app.route(f"{self.app_root}alive")
         def alive():
             return 'OK'
+
+        @app.route(f"{self.app_root}notifications")
+        def db_notifications():
+            return render_template('notifications.html', content=NotificationHelper.get())
+
+        @app.route(f"{self.app_root}giveaways")
+        def db_giveaways():
+            return render_template('giveaways.html', content=GiveawayHelper.get())
 
         if self.enabled:
             logger.info("Webserver Enabled. Running")

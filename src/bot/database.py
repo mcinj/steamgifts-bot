@@ -6,7 +6,7 @@ from alembic import command
 from alembic.config import Config
 from dateutil import tz
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy_utils import database_exists
 
 from .log import get_logger
@@ -17,11 +17,7 @@ engine = sqlalchemy.create_engine(f"{os.getenv('BOT_DB_URL', 'sqlite:///./config
 engine.connect()
 
 
-def create_engine(db_url: str):
-    return engine
-
-
-def run_migrations(script_location: str, db_url: str) -> None:
+def run_db_migrations(script_location: str, db_url: str) -> None:
     logger.debug('Running DB migrations in %r on %r', script_location, db_url)
     alembic_cfg = Config()
     alembic_cfg.set_main_option('script_location', script_location)
@@ -30,10 +26,9 @@ def run_migrations(script_location: str, db_url: str) -> None:
     if not database_exists(db_url):
         logger.debug(f"'{db_url}' does not exist. Running normal migration to create db and tables." )
         command.upgrade(alembic_cfg, 'head')
-    if database_exists(db_url):
-        logger.debug(f"'{db_url} exists.")
-        e = create_engine(db_url)
-        insp = sqlalchemy.inspect(e)
+    elif database_exists(db_url):
+        logger.debug(f"'{db_url}' exists.")
+        insp = sqlalchemy.inspect(engine)
         alembic_version_table_name = 'alembic_version'
         has_alembic_table = insp.has_table(alembic_version_table_name)
         if has_alembic_table:
@@ -48,6 +43,11 @@ def run_migrations(script_location: str, db_url: str) -> None:
 
 
 class NotificationHelper:
+
+    @classmethod
+    def get(cls):
+        with Session(engine) as session:
+            return session.query(TableNotification).order_by(TableNotification.created_at.desc()).all()
 
     @classmethod
     def insert(cls, type_of_error, message, medium, success):
@@ -88,6 +88,11 @@ class NotificationHelper:
 
 
 class GiveawayHelper:
+
+    @classmethod
+    def get(cls):
+        with Session(engine) as session:
+            return session.query(TableGiveaway).options(joinedload('steam_item')).order_by(TableGiveaway.giveaway_ended_at.desc()).all()
 
     @classmethod
     def unix_timestamp_to_utc_datetime(cls, timestamp):

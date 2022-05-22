@@ -1,13 +1,13 @@
 import os
 from time import sleep
 
-from .log import get_logger
-from .config_reader import ConfigReader, ConfigException
-from .enter_giveaways import SteamGiftsException
-from .giveaway_thread import GiveawayThread
-from .notification import Notification
-from .database import run_migrations, create_engine
-from .webserver_thread import WebServerThread
+from src.bot.log import get_logger
+from src.bot.config_reader import ConfigReader, ConfigException
+from src.bot.enter_giveaways import SteamGiftsException
+from src.bot.giveaway_thread import GiveawayThread
+from src.bot.notification import Notification
+from src.bot.database import run_db_migrations
+from src.web.webserver_thread import WebServerThread
 
 logger = get_logger(__name__)
 config_file_name = f"{os.getenv('BOT_CONFIG_DIR', './config')}/config.ini"
@@ -73,9 +73,9 @@ def entry():
                                               |___/                                       
         -------------------------------------------------------------------------------------
         """)
-    run_migrations(alembic_migration_files, db_url)
-    create_engine(db_url)
+    run_db_migrations(alembic_migration_files, db_url)
     run()
+
 
 if __name__ == '__main__':
     entry()

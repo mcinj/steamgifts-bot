@@ -4,5 +4,5 @@ __pycache__/
 .idea
 config/config.ini
 config/*.log*
-config/sqlite.db
+config/sqlite*
 .DS_STORE

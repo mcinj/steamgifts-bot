@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Steamgifts Bot Configuration</title>
+    <title>{{name}} Steamgifts Bot Configuration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   </head>
   <body>
@@ -13,6 +13,8 @@
             <li><a href="{{ url_for('config') }}">Config</a></li>
             <li><a href="{{ url_for('log_info') }}">Info Logs</a></li>
             <li><a href="{{ url_for('log_debug') }}">Debug Logs</a></li>
+            <li><a href="{{ url_for('db_giveaways') }}">Giveaways</a></li>
+            <li><a href="{{ url_for('db_notifications') }}">Notifications</a></li>
           </ul>
         </nav></strong>
       </div>
