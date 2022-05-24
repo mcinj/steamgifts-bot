@@ -16,7 +16,7 @@ class WebServerThread(threading.Thread):
         Thread.__init__(self)
         self.exc = None
         self.config = config
-        self.name = config['NOTIFICATIONS'].get('notification.prefix')
+        self.prefix = config['NOTIFICATIONS'].get('notification.prefix')
         self.host = config['WEB'].get('web.host')
         self.port = config['WEB'].getint('web.port')
         self.ssl = config['WEB'].getboolean('web.ssl')
@@ -43,19 +43,19 @@ class WebServerThread(threading.Thread):
         def config():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/config.ini", 'r') as f:
                 content = f.read()
-            return render_template('configuration.html', name=self.name, content=content)
+            return render_template('configuration.html', name=self.prefix, content=content)
 
         @app.route(f"{self.app_root}log_info")
         def log_info():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/info.log", 'r') as f:
                 content = f.read()
-                return render_template('log.html', name=self.name, log_type='info', content=content)
+                return render_template('log.html', name=self.prefix, log_type='info', content=content)
 
         @app.route(f"{self.app_root}log_debug")
         def log_debug():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/debug.log", 'r') as f:
                 content = f.read()
-                return render_template('log.html', name=self.name, log_type='debug', content=content)
+                return render_template('log.html', name=self.prefix, log_type='debug', content=content)
 
         @app.route(f"{self.app_root}alive")
         def alive():
@@ -63,11 +63,12 @@ class WebServerThread(threading.Thread):
 
         @app.route(f"{self.app_root}notifications")
         def db_notifications():
-            return render_template('notifications.html', content=NotificationHelper.get())
+            return render_template('notifications.html', name=self.prefix, content=NotificationHelper.get())
 
-        @app.route(f"{self.app_root}giveaways")
-        def db_giveaways():
-            return render_template('giveaways.html', content=GiveawayHelper.get())
+        @app.route(f"{self.app_root}giveaways", methods=['GET'], defaults={"page": 1})
+        @app.route(f"{self.app_root}giveaways/<int:page>", methods=['GET'])
+        def db_giveaways(page):
+            return render_template('giveaways.html', name=self.prefix, content=GiveawayHelper.paginate(page=page))
 
         if self.enabled:
             logger.info("Webserver Enabled. Running")

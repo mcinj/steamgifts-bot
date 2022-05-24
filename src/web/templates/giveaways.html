@@ -22,7 +22,19 @@
     </div>
 </header>
 <div class="container">
-    <table>
+                <ul class="pagination">
+                    {% if content.previous_page %}
+                      <li class="page-item"> <a class="page-link" href="{{ url_for('db_giveaways', page=content.previous_page) }}">Previous</a></li>
+                    {% else %}
+                      <li class="page-item">Previous</li>
+                    {% endif %}
+                    {% if content.next_page %}
+                      <li class="page-item"> <a class="page-link" href="{{ url_for('db_giveaways', page=content.next_page) }}">Next</a></li>
+                    {% else %}
+                      <li class="page-item">Next</li>
+                    {% endif %}
+                </ul>
+    <table class="styled-table">
         <thead>
         <tr>
             <th>Giveaway ID</th>
@@ -40,7 +52,7 @@
         </tr>
         </thead>
         <tbody>
-        {% for row in content %}
+        {% for row in content.items %}
         <tr>
             <td>{{row.giveaway_id}}</td>
             <td>{{row.steam_id}}</td>

@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta
 
+import paginate_sqlalchemy
 import sqlalchemy
 from alembic import command
 from alembic.config import Config
@@ -92,7 +93,16 @@ class GiveawayHelper:
     @classmethod
     def get(cls):
         with Session(engine) as session:
-            return session.query(TableGiveaway).options(joinedload('steam_item')).order_by(TableGiveaway.giveaway_ended_at.desc()).all()
+            return session.query(TableGiveaway).options(joinedload('steam_item'))\
+                .order_by(TableGiveaway.giveaway_ended_at.desc()).all()
+
+    @classmethod
+    def paginate(cls, page=1):
+        with Session(engine) as session:
+            paginated_giveaways = paginate_sqlalchemy.SqlalchemyOrmPage(session.query(TableGiveaway)
+                                                                        .options(joinedload('steam_item'))
+                                                                        .order_by(TableGiveaway.giveaway_ended_at.desc()), page=page)
+            return paginated_giveaways
 
     @classmethod
     def unix_timestamp_to_utc_datetime(cls, timestamp):
