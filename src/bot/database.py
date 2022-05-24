@@ -51,9 +51,10 @@ class NotificationHelper:
             return session.query(TableNotification).order_by(TableNotification.created_at.desc()).all()
 
     @classmethod
-    def insert(cls, type_of_error, message, medium, success):
+    def insert(cls, type_of_error, message, medium, success, number_won):
         with Session(engine) as session:
-            n = TableNotification(type=type_of_error, message=message, medium=medium, success=success)
+            n = TableNotification(type=type_of_error, message=message, medium=medium, success=success,
+                                  games_won=number_won)
             session.add(n)
             session.commit()
 
@@ -65,7 +66,7 @@ class NotificationHelper:
             within_3_days = session.query(TableNotification) \
                 .filter(func.DATE(TableNotification.created_at) >= (datetime.utcnow().date() - timedelta(days=1))) \
                 .filter(func.DATE(TableNotification.created_at) <= (datetime.utcnow().date() + timedelta(days=1))) \
-                .filter_by(type='won').all()
+                .filter_by(type='won').order_by(TableNotification.created_at.asc()).all()
             actual = []
             for r in within_3_days:
                 if r.created_at.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal()).date() == datetime.now(

@@ -15,11 +15,11 @@ class Notification:
         self.pushover_user_key = None
         self.message_prefix = f"{message_prefix}: "
 
-    def send_won(self, message):
-        self.__send('won', message)
+    def send_won(self, message, number_won):
+        self.__send('won', message, number_won)
 
     def send_error(self, message):
-        self.__send('error', message)
+        self.__send('error', message, number_won=None)
 
     def enable_pushover(self, token, user_key):
         logger.debug("Enabling pushover notifications.")
@@ -27,13 +27,13 @@ class Notification:
         self.pushover_token = token
         self.pushover_user_key = user_key
 
-    def __send(self, type_of_error, message):
-        logger.debug(f"Attempting to notify: {message}")
+    def __send(self, type_of_error, message, number_won=None):
+        logger.debug(f"Attempting to notify: '{message}'. Won: {number_won}")
         if self.pushover:
             logger.debug("Pushover enabled. Sending message.")
-            self.__pushover(type_of_error, message)
+            self.__pushover(type_of_error, message, number_won)
 
-    def __pushover(self, type_of_error, message):
+    def __pushover(self, type_of_error, message, number_won=None):
         conn = http.client.HTTPSConnection("api.pushover.net:443")
         conn.request("POST", "/1/messages.json",
                      urllib.parse.urlencode({
@@ -48,4 +48,4 @@ class Notification:
         else:
             logger.error(f"Pushover notification failed. Code {response.getcode()}: {response.read().decode()}")
             success = False
-        NotificationHelper.insert(type_of_error, f"{message}", 'pushover', success)
+        NotificationHelper.insert(type_of_error, f"{message}", 'pushover', success, number_won)

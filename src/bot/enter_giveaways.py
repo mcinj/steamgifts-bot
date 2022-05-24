@@ -89,14 +89,22 @@ class EnterGiveaways:
 
         won = soup.select("a[title='Giveaways Won'] div")
         if won:
-            number_won = soup.select_one("a[title='Giveaways Won'] div").text
+            number_won = int(soup.select_one("a[title='Giveaways Won'] div").text)
             won_notifications = NotificationHelper.get_won_notifications_today()
             if won_notifications and len(won_notifications) >= 1:
-                logger.info("🆒️ Win(s) detected, but we have already notified that there are won games waiting "
-                            "to be received. Doing nothing.")
+                if number_won == won_notifications[-1].games_won:
+                    logger.info("🆒️ Win(s) detected, but we have already notified that there are won games waiting "
+                                "to be received. Doing nothing.")
+                elif number_won > won_notifications[-1].games_won:
+                    logger.info("🔥🔥 MORE win(s) detected. Notifying again.")
+                    self.notification.send_won(f"You won ANOTHER game. You now have {number_won} game(s) "
+                                               f"waiting to be claimed.", number_won)
+                else:  # we have less games waiting to be claimed than notified, meaning some have been claimed
+                    logger.info("🆒️ Win(s) detected, but we have already notified that there are won games waiting "
+                                "to be received. Some have been claimed. Doing nothing.")
             else:
                 logger.info(f"💰💰 WINNER! You have {number_won} game(s) waiting to be claimed. 💰💰")
-                self.notification.send_won(f"WINNER! You have {number_won} game(s) waiting to be claimed.")
+                self.notification.send_won(f"WINNER! You have {number_won} game(s) waiting to be claimed.", number_won)
         else:
             logger.debug('No wins detected. Doing nothing.')
 
