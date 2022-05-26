@@ -1,28 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{name}} Steamgifts Bot DB View</title>
-    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
-</head>
-<body>
-<header>
-    <div class="container">
-        <h1 class="logo">Steamgifts Bot</h1>
-        <strong>
-            <nav>
-                <ul class="menu">
-                    <li><a href="{{ url_for('config') }}">Config</a></li>
-                    <li><a href="{{ url_for('log_info') }}">Info Logs</a></li>
-                    <li><a href="{{ url_for('log_debug') }}">Debug Logs</a></li>
-                    <li><a href="{{ url_for('db_giveaways') }}">Giveaways</a></li>
-                    <li><a href="{{ url_for('db_notifications') }}">Notifications</a></li>
-                </ul>
-            </nav>
-        </strong>
-    </div>
-</header>
-<div class="container">
-    <table>
+{% extends 'base.html' %}
+
+{% block title %} {{name}} Steamgifts Bot Notifications {% endblock %}
+{% block content %}
+<table>
         <thead>
         <tr>
             <th>ID</th>
@@ -46,6 +26,4 @@
         {% endfor %}
         </tbody>
     </table>
-</div>
-</body>
-</html>
+{% endblock %}

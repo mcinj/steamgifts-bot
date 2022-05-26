@@ -42,20 +42,20 @@ class WebServerThread(threading.Thread):
         @app.route(f"{self.app_root}")
         def config():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/config.ini", 'r') as f:
-                content = f.read()
-            return render_template('configuration.html', name=self.prefix, content=content)
+                data = f.read()
+            return render_template('configuration.html', name=self.prefix, data=data)
 
         @app.route(f"{self.app_root}log_info")
         def log_info():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/info.log", 'r') as f:
-                content = f.read()
-                return render_template('log.html', name=self.prefix, log_type='info', content=content)
+                data = f.read()
+                return render_template('log.html', name=self.prefix, log_type='info', data=data)
 
         @app.route(f"{self.app_root}log_debug")
         def log_debug():
             with open(f"{os.getenv('BOT_CONFIG_DIR', './config')}/debug.log", 'r') as f:
-                content = f.read()
-                return render_template('log.html', name=self.prefix, log_type='debug', content=content)
+                data = f.read()
+                return render_template('log.html', name=self.prefix, log_type='debug', data=data)
 
         @app.route(f"{self.app_root}alive")
         def alive():
@@ -63,12 +63,12 @@ class WebServerThread(threading.Thread):
 
         @app.route(f"{self.app_root}notifications")
         def db_notifications():
-            return render_template('notifications.html', name=self.prefix, content=NotificationHelper.get())
+            return render_template('notifications.html', name=self.prefix, data=NotificationHelper.get())
 
         @app.route(f"{self.app_root}giveaways", methods=['GET'], defaults={"page": 1})
         @app.route(f"{self.app_root}giveaways/<int:page>", methods=['GET'])
         def db_giveaways(page):
-            return render_template('giveaways.html', name=self.prefix, content=GiveawayHelper.paginate(page=page))
+            return render_template('giveaways.html', name=self.prefix, data=GiveawayHelper.paginate(page=page))
 
         if self.enabled:
             logger.info("Webserver Enabled. Running")
