@@ -70,6 +70,12 @@ class WebServerThread(threading.Thread):
         def db_giveaways(page):
             return render_template('giveaways.html', name=self.prefix, data=GiveawayHelper.paginate(page=page))
 
+        @app.route(f"{self.app_root}stats")
+        def stats():
+            totals = GiveawayHelper.total_giveaways()
+            entered = GiveawayHelper.total_entered()
+            return render_template('stats.html', name=self.prefix, totals=totals, entered=entered)
+
         if self.enabled:
             logger.info("Webserver Enabled. Running")
             if self.ssl:

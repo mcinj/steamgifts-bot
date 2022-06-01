@@ -6,7 +6,7 @@ import sqlalchemy
 from alembic import command
 from alembic.config import Config
 from dateutil import tz
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy_utils import database_exists
 
@@ -25,7 +25,7 @@ def run_db_migrations(script_location: str, db_url: str) -> None:
     alembic_cfg.set_main_option('sqlalchemy.url', db_url)
 
     if not database_exists(db_url):
-        logger.debug(f"'{db_url}' does not exist. Running normal migration to create db and tables." )
+        logger.debug(f"'{db_url}' does not exist. Running normal migration to create db and tables.")
         command.upgrade(alembic_cfg, 'head')
     elif database_exists(db_url):
         logger.debug(f"'{db_url}' exists.")
@@ -94,7 +94,7 @@ class GiveawayHelper:
     @classmethod
     def get(cls):
         with Session(engine) as session:
-            return session.query(TableGiveaway).options(joinedload('steam_item'))\
+            return session.query(TableGiveaway).options(joinedload('steam_item')) \
                 .order_by(TableGiveaway.giveaway_ended_at.desc()).all()
 
     @classmethod
@@ -102,8 +102,19 @@ class GiveawayHelper:
         with Session(engine) as session:
             paginated_giveaways = paginate_sqlalchemy.SqlalchemyOrmPage(session.query(TableGiveaway)
                                                                         .options(joinedload('steam_item'))
-                                                                        .order_by(TableGiveaway.giveaway_ended_at.desc()), page=page)
+                                                                        .order_by(
+                TableGiveaway.giveaway_ended_at.desc()), page=page)
             return paginated_giveaways
+
+    @classmethod
+    def total_giveaways(cls):
+        with Session(engine) as session:
+            return session.execute(select(func.count(TableGiveaway.giveaway_id))).scalar_one()
+
+    @classmethod
+    def total_entered(cls):
+        with Session(engine) as session:
+            return session.query(TableGiveaway).filter_by(entered=True).count()
 
     @classmethod
     def unix_timestamp_to_utc_datetime(cls, timestamp):
