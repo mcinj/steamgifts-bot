@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy_utils import database_exists
 
 from .log import get_logger
-from .models import TableNotification, TableGiveaway, TableSteamItem
+from .models import TableNotification, TableGiveaway, TableSteamItem, TableTask
 
 logger = get_logger(__name__)
 engine = sqlalchemy.create_engine(f"{os.getenv('BOT_DB_URL', 'sqlite:///./config/sqlite.db')}", echo=False)
@@ -127,7 +127,7 @@ class GiveawayHelper:
                                                           steam_id=giveaway.steam_app_id).all()
 
     @classmethod
-    def insert(cls, giveaway, entered):
+    def insert(cls, giveaway, entered, won):
         with Session(engine) as session:
             result = session.query(TableSteamItem).filter_by(steam_id=giveaway.steam_app_id).all()
             if result:
@@ -149,17 +149,18 @@ class GiveawayHelper:
                 giveaway_ended_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
                 cost=giveaway.cost,
                 copies=giveaway.copies,
-                contributor_level=giveaway.contributor_level,
+                contributor_level=giveaway._contributor_level,
                 entered=entered,
+                won=won,
                 game_entries=giveaway.game_entries)
             session.add(g)
             session.commit()
 
     @classmethod
-    def upsert_giveaway(cls, giveaway, entered):
+    def upsert_giveaway(cls, giveaway, entered, won):
         result = GiveawayHelper.get_by_ids(giveaway)
         if not result:
-            GiveawayHelper.insert(giveaway, entered)
+            GiveawayHelper.insert(giveaway, entered, won)
         else:
             with Session(engine) as session:
                 g = TableGiveaway(
@@ -171,8 +172,30 @@ class GiveawayHelper:
                     giveaway_ended_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
                     cost=giveaway.cost,
                     copies=giveaway.copies,
-                    contributor_level=giveaway.contributor_level,
+                    contributor_level=giveaway._contributor_level,
                     entered=entered,
+                    won=won,
+                    game_entries=giveaway.game_entries)
+                session.merge(g)
+                session.commit()
+
+    @classmethod
+    def upsert_giveaway(cls, giveaway):
+        result = GiveawayHelper.get_by_ids(giveaway)
+        if not result:
+            GiveawayHelper.insert(giveaway, False, False)
+        else:
+            with Session(engine) as session:
+                g = TableGiveaway(
+                    giveaway_id=giveaway.giveaway_game_id,
+                    steam_id=result[0].steam_id,
+                    giveaway_uri=giveaway.giveaway_uri,
+                    user=giveaway.user,
+                    giveaway_created_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_created_timestamp),
+                    giveaway_ended_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
+                    cost=giveaway.cost,
+                    copies=giveaway.copies,
+                    contributor_level=giveaway._contributor_level,
                     game_entries=giveaway.game_entries)
                 session.merge(g)
                 session.commit()

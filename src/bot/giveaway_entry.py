@@ -5,7 +5,7 @@ import time
 logger = get_logger(__name__)
 
 
-class Giveaway:
+class GiveawayEntry:
 
     def __init__(self, soup_item):
         self.steam_app_id = None
@@ -29,27 +29,27 @@ class Giveaway:
         logger.debug(f"Giveaway html: {soup_item}")
         icons = soup_item.select('a.giveaway__icon')
         self.steam_url = icons[0]['href']
-        self.steam_app_id = self.get_steam_app_id(self.steam_url)
+        self.steam_app_id = self._get_steam_app_id(self.steam_url)
         self.game_name = soup_item.find('a', {'class': 'giveaway__heading__name'}).text
         self.giveaway_game_id = soup_item.find('a', {'class': 'giveaway__heading__name'})['href'].split('/')[2]
         self.giveaway_uri = soup_item.select_one('a.giveaway__heading__name')['href']
         pin_class = soup_item.parent.parent.get("class")
         self.pinned = pin_class is not None and len(pin_class) > 0 and pin_class[0].find('pinned') != -1
-        self.cost, self.copies = self.determine_cost_and_copies(soup_item, self.game_name, self.giveaway_game_id)
+        self.cost, self.copies = self._determine_cost_and_copies(soup_item, self.game_name, self.giveaway_game_id)
         self.game_entries = int(soup_item.select('div.giveaway__links span')[0].text.split(' ')[0].replace(',', ''))
         contributor_level = soup_item.select_one('div[title="Contributor Level"]')
-        self.contributor_level = self.determine_contributor_level(contributor_level)
+        self.contributor_level = self._determine_contributor_level(contributor_level)
         self.user = soup_item.select_one('a.giveaway__username').text
         times = soup_item.select('div span[data-timestamp]')
         self.time_remaining_timestamp = int(times[0]['data-timestamp'])
         self.time_remaining_string = times[0].text
-        self.time_remaining_in_minutes = self.determine_time_in_minutes(times[0]['data-timestamp'])
+        self.time_remaining_in_minutes = self._determine_time_in_minutes(times[0]['data-timestamp'])
         self.time_created_timestamp = int(times[1]['data-timestamp'])
         self.time_created_string = times[1].text
-        self.time_created_in_minutes = self.determine_time_in_minutes(times[1]['data-timestamp'])
+        self.time_created_in_minutes = self._determine_time_in_minutes(times[1]['data-timestamp'])
         logger.debug(f"Scraped Giveaway: {self}")
 
-    def determine_contributor_level(self, contributor_level):
+    def _determine_contributor_level(self, contributor_level):
         if contributor_level is None:
             return 0
         match = re.search('^Level (?P<level>[0-9]+)\\+$', contributor_level.text, re.IGNORECASE)
@@ -58,14 +58,14 @@ class Giveaway:
         else:
             return None
 
-    def get_steam_app_id(self, steam_url):
+    def _get_steam_app_id(self, steam_url):
         match = re.search('^.+/[a-z0-9]+/(?P<steam_app_id>[0-9]+)/$', steam_url, re.IGNORECASE)
         if match:
             return match.group('steam_app_id')
         else:
             return None
 
-    def determine_time_in_minutes(self, timestamp):
+    def _determine_time_in_minutes(self, timestamp):
         if not timestamp or not re.search('^[0-9]+$', timestamp):
             logger.error(f"Could not determine time from string {timestamp}")
             return None
@@ -73,7 +73,7 @@ class Giveaway:
         giveaway_endtime = time.localtime(int(timestamp))
         return int(abs((time.mktime(giveaway_endtime) - time.mktime(now)) / 60))
 
-    def determine_cost_and_copies(self, item, game_name, game_id):
+    def _determine_cost_and_copies(self, item, game_name, game_id):
         item_headers = item.find_all('span', {'class': 'giveaway__heading__thin'})
         if len(item_headers) == 1:  # then no multiple copies
             game_cost = item_headers[0].getText().replace('(', '').replace(')', '').replace('P', '')
