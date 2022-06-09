@@ -7,8 +7,10 @@ from time import sleep
 
 from dateutil import tz
 
+from .evaluate_won_giveaways import EvaluateWonGiveaways
 from .log import get_logger
 from .enter_giveaways import EnterGiveaways
+from .scheduler import Scheduler
 
 logger = get_logger(__name__)
 
@@ -46,6 +48,17 @@ class GiveawayThread(threading.Thread):
             logger.error("⁉️ Both 'Default' and 'Wishlist' configurations are disabled. Nothing will run. Exiting...")
             sleep(10)
             exit(-1)
+
+        logger.debug("Creating scheduler")
+        scheduler = Scheduler()
+        won_giveaway_job = scheduler.get_job(job_id='eval_giveaways')
+        if won_giveaway_job:
+            logger.debug("Previous won giveaway evaluator job exists. Removing.")
+            won_giveaway_job.remove()
+        scheduler.add_job(EvaluateWonGiveaways(cookie, user_agent, notification).start,
+                          id='eval_giveaways', trigger='interval', max_instances=1, replace_existing=True, days=1,
+                          next_run_time=datetime.now() + timedelta(minutes=1))
+        scheduler.start()
 
         while True:
             logger.info("🟢 Evaluating giveaways.")

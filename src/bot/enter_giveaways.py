@@ -223,13 +223,13 @@ class EnterGiveaways:
                 if if_enter_giveaway:
                     res = self._enter_giveaway(giveaway)
                     if res:
-                        GiveawayHelper.upsert_giveaway(giveaway, True, False)
+                        GiveawayHelper.upsert_giveaway_with_details(giveaway, True, False)
                         self._points -= int(giveaway.cost)
                         txt = f"✅ Entered giveaway '{giveaway.game_name}'"
                         logger.info(txt)
                         sleep(randint(4, 15))
                     else:
-                        GiveawayHelper.upsert_giveaway(giveaway, False, False)
+                        GiveawayHelper.upsert_giveaway_with_details(giveaway, False, False)
                 else:
                     GiveawayHelper.upsert_giveaway(giveaway)
                 # if we are on any filter type except New and we get to a giveaway that exceeds our

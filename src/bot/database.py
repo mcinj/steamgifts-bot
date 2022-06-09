@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy_utils import database_exists
 
 from .log import get_logger
-from .models import TableNotification, TableGiveaway, TableSteamItem, TableTask
+from .models import TableNotification, TableGiveaway, TableSteamItem
 
 logger = get_logger(__name__)
 engine = sqlalchemy.create_engine(f"{os.getenv('BOT_DB_URL', 'sqlite:///./config/sqlite.db')}", echo=False)
@@ -117,6 +117,16 @@ class GiveawayHelper:
             return session.query(TableGiveaway).filter_by(entered=True).count()
 
     @classmethod
+    def total_won(cls):
+        with Session(engine) as session:
+            return session.query(TableGiveaway).filter_by(won=True).count()
+
+    @classmethod
+    def get_by_giveaway_id(cls, game_id):
+        with Session(engine) as session:
+            return session.query(TableGiveaway).filter_by(giveaway_id=game_id).one_or_none()
+
+    @classmethod
     def unix_timestamp_to_utc_datetime(cls, timestamp):
         return datetime.utcfromtimestamp(timestamp)
 
@@ -125,6 +135,17 @@ class GiveawayHelper:
         with Session(engine) as session:
             return session.query(TableGiveaway).filter_by(giveaway_id=giveaway.giveaway_game_id,
                                                           steam_id=giveaway.steam_app_id).all()
+
+    @classmethod
+    def mark_game_as_won(cls, game_id):
+        with Session(engine) as session:
+            result = session.query(TableGiveaway).filter_by(giveaway_id=game_id).all()
+            if result:
+                won_giveaway = result[0]
+                if not won_giveaway.won:
+                    won_giveaway.won = True
+                    session.add(won_giveaway)
+                    session.commit()
 
     @classmethod
     def insert(cls, giveaway, entered, won):
@@ -149,7 +170,7 @@ class GiveawayHelper:
                 giveaway_ended_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
                 cost=giveaway.cost,
                 copies=giveaway.copies,
-                contributor_level=giveaway._contributor_level,
+                contributor_level=giveaway.contributor_level,
                 entered=entered,
                 won=won,
                 game_entries=giveaway.game_entries)
@@ -157,7 +178,7 @@ class GiveawayHelper:
             session.commit()
 
     @classmethod
-    def upsert_giveaway(cls, giveaway, entered, won):
+    def upsert_giveaway_with_details(cls, giveaway, entered, won):
         result = GiveawayHelper.get_by_ids(giveaway)
         if not result:
             GiveawayHelper.insert(giveaway, entered, won)
@@ -172,7 +193,7 @@ class GiveawayHelper:
                     giveaway_ended_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
                     cost=giveaway.cost,
                     copies=giveaway.copies,
-                    contributor_level=giveaway._contributor_level,
+                    contributor_level=giveaway.contributor_level,
                     entered=entered,
                     won=won,
                     game_entries=giveaway.game_entries)
@@ -195,7 +216,7 @@ class GiveawayHelper:
                     giveaway_ended_at=GiveawayHelper.unix_timestamp_to_utc_datetime(giveaway.time_remaining_timestamp),
                     cost=giveaway.cost,
                     copies=giveaway.copies,
-                    contributor_level=giveaway._contributor_level,
+                    contributor_level=giveaway.contributor_level,
                     game_entries=giveaway.game_entries)
                 session.merge(g)
                 session.commit()

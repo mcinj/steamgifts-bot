@@ -19,6 +19,9 @@ class TableNotification(Base):
 
     __mapper_args__ = {"eager_defaults": True}
 
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
+
 
 class TableSteamItem(Base):
     __tablename__ = 'steam_item'
@@ -29,6 +32,9 @@ class TableSteamItem(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     giveaways = relationship("TableGiveaway", back_populates="steam_item")
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
 
 
 class TableGiveaway(Base):
@@ -43,6 +49,7 @@ class TableGiveaway(Base):
     copies = Column(Integer(), nullable=False)
     contributor_level = Column(Integer(), nullable=False)
     entered = Column(Boolean(), nullable=False)
+    won = Column(Boolean(), nullable=False)
     game_entries = Column(Integer(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -50,3 +57,6 @@ class TableGiveaway(Base):
     steam_item = relationship("TableSteamItem", back_populates="giveaways")
 
     __mapper_args__ = {"eager_defaults": True}
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)

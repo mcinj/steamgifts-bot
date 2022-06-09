@@ -74,7 +74,8 @@ class WebServerThread(threading.Thread):
         def stats():
             totals = GiveawayHelper.total_giveaways()
             entered = GiveawayHelper.total_entered()
-            return render_template('stats.html', name=self.prefix, totals=totals, entered=entered)
+            won = GiveawayHelper.total_won()
+            return render_template('stats.html', name=self.prefix, totals=totals, entered=entered, won=won)
 
         if self.enabled:
             logger.info("Webserver Enabled. Running")
