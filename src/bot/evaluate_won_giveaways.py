@@ -1,14 +1,10 @@
-import json
-from random import randint
-from time import sleep
-
 import requests
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
+from .database import GiveawayHelper
 from .log import get_logger
-from .database import NotificationHelper, GiveawayHelper
 from .won_entry import WonEntry
 
 logger = get_logger(__name__)
@@ -85,6 +81,7 @@ class EvaluateWonGiveaways:
             w = GiveawayHelper.get_by_giveaway_id(won_giveaway.giveaway_game_id)
             logger.debug(f"Giveaway in db: {w}")
             if w and not w.won and w.entered:
-                logger.info(f"Found new won giveaway not already marked as won. Marking. {w}")
+                logger.info(f"Marking {won_giveaway.game_name} as won.")
+                logger.debug(f"Marking: {w}")
                 GiveawayHelper.mark_game_as_won(won_giveaway.giveaway_game_id)
 

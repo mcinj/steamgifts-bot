@@ -1,7 +1,7 @@
 import os
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 from .log import get_logger
 
@@ -18,7 +18,7 @@ class Scheduler:
                 'coalesce': True,
                 'max_instances': 3
             }
-            self.scheduler = BackgroundScheduler(jobstores=jobstores, job_defaults=job_defaults)
+            self.scheduler = BlockingScheduler(jobstores=jobstores, job_defaults=job_defaults)
 
         def __getattr__(self, name):
             return getattr(self.scheduler, name)

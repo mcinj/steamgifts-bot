@@ -1,15 +1,12 @@
 import datetime
 import threading
 from datetime import timedelta, datetime
-from random import randint
 from threading import Thread
 from time import sleep
 
-from dateutil import tz
-
+from .enter_giveaways import EnterGiveaways
 from .evaluate_won_giveaways import EvaluateWonGiveaways
 from .log import get_logger
-from .enter_giveaways import EnterGiveaways
 from .scheduler import Scheduler
 
 logger = get_logger(__name__)
@@ -22,63 +19,71 @@ class GiveawayThread(threading.Thread):
         self.exc = None
         self.config = config
         self.notification = notification
+        logger.debug("Creating scheduler")
+        self._scheduler = Scheduler()
+        self.won_giveaway_job_id = 'eval_won_giveaways'
+        self.evaluate_giveaway_job_id = 'eval_giveaways'
 
-    def run_steam_gifts(self, config, notification):
-        cookie = config['DEFAULT'].get('cookie')
-        user_agent = config['DEFAULT'].get('user_agent')
-        main_page_enabled = config['DEFAULT'].getboolean('enabled')
-        minimum_points = config['DEFAULT'].getint('minimum_points')
-        max_entries = config['DEFAULT'].getint('max_entries')
-        max_time_left = config['DEFAULT'].getint('max_time_left')
-        minimum_game_points = config['DEFAULT'].getint('minimum_game_points')
-        blacklist = config['DEFAULT'].get('blacklist_keywords')
+        if config['DEFAULT'].getboolean('enabled'):
+            cookie = config['DEFAULT'].get('cookie')
+            user_agent = config['DEFAULT'].get('user_agent')
 
-        all_page = EnterGiveaways(cookie, user_agent, 'All', False, minimum_points, max_entries,
-                                  max_time_left, minimum_game_points, blacklist, notification)
+            minimum_points = config['DEFAULT'].getint('minimum_points')
+            max_entries = config['DEFAULT'].getint('max_entries')
+            max_time_left = config['DEFAULT'].getint('max_time_left')
+            minimum_game_points = config['DEFAULT'].getint('minimum_game_points')
+            blacklist = config['DEFAULT'].get('blacklist_keywords')
 
-        wishlist_page_enabled = config['WISHLIST'].getboolean('wishlist.enabled')
-        wishlist_minimum_points = config['WISHLIST'].getint('wishlist.minimum_points')
-        wishlist_max_entries = config['WISHLIST'].getint('wishlist.max_entries')
-        wishlist_max_time_left = config['WISHLIST'].getint('wishlist.max_time_left')
+            self._all_page = EnterGiveaways(cookie, user_agent, 'All', False, minimum_points, max_entries,
+                                            max_time_left, minimum_game_points, blacklist, notification)
 
-        wishlist_page = EnterGiveaways(cookie, user_agent, 'Wishlist', False, wishlist_minimum_points,
-                                       wishlist_max_entries, wishlist_max_time_left, 0, '', notification)
+        if config['WISHLIST'].getboolean('wishlist.enabled'):
+            wishlist_minimum_points = config['WISHLIST'].getint('wishlist.minimum_points')
+            wishlist_max_entries = config['WISHLIST'].getint('wishlist.max_entries')
+            wishlist_max_time_left = config['WISHLIST'].getint('wishlist.max_time_left')
 
-        if not main_page_enabled and not wishlist_page_enabled:
+            self._wishlist_page = EnterGiveaways(cookie, user_agent, 'Wishlist', False, wishlist_minimum_points,
+                                                 wishlist_max_entries, wishlist_max_time_left, 0, '', notification)
+
+        if not self._all_page and not self._wishlist_page:
             logger.error("⁉️ Both 'Default' and 'Wishlist' configurations are disabled. Nothing will run. Exiting...")
             sleep(10)
             exit(-1)
 
-        logger.debug("Creating scheduler")
-        scheduler = Scheduler()
-        won_giveaway_job = scheduler.get_job(job_id='eval_giveaways')
+        self._won_page_job_function = EvaluateWonGiveaways(cookie, user_agent, notification).start
+        won_giveaway_job = self._scheduler.get_job(job_id=self.won_giveaway_job_id)
         if won_giveaway_job:
             logger.debug("Previous won giveaway evaluator job exists. Removing.")
             won_giveaway_job.remove()
-        scheduler.add_job(EvaluateWonGiveaways(cookie, user_agent, notification).start,
-                          id='eval_giveaways', trigger='interval', max_instances=1, replace_existing=True, days=1,
-                          next_run_time=datetime.now() + timedelta(minutes=1))
-        scheduler.start()
+        self._scheduler.add_job(self._won_page_job_function,
+                                id=self.won_giveaway_job_id,
+                                trigger='interval',
+                                max_instances=1,
+                                replace_existing=True,
+                                hours=12,
+                                next_run_time=datetime.now() + timedelta(minutes=5),
+                                jitter=8000)
 
-        while True:
-            logger.info("🟢 Evaluating giveaways.")
-            if wishlist_page_enabled:
-                wishlist_page.start()
-            if main_page_enabled:
-                all_page.start()
-
-            logger.info("🔴 All giveaways evaluated.")
-            random_seconds = randint(1740, 3540)  # sometime between 29-59 minutes
-            when_to_start_again = datetime.now(tz=tz.tzlocal()) + timedelta(seconds=random_seconds)
-            logger.info(f"🛋 Going to sleep for {random_seconds / 60} minutes. "
-                        f"Will start again at {when_to_start_again}")
-            sleep(random_seconds)
+        evaluate_giveaway_job = self._scheduler.get_job(job_id=self.evaluate_giveaway_job_id)
+        if evaluate_giveaway_job:
+            logger.debug("Previous giveaway evaluator job exists. Removing.")
+            evaluate_giveaway_job.remove()
+        runner = GiveawayThread.GiveawayRunner(self._wishlist_page, self._all_page,
+                                               self.evaluate_giveaway_job_id)
+        self._scheduler.add_job(runner.run,
+                                id=self.evaluate_giveaway_job_id,
+                                trigger='interval',
+                                max_instances=1,
+                                replace_existing=True,
+                                minutes=44,
+                                next_run_time=datetime.now(),
+                                jitter=900)
 
     def run(self):
         # Variable that stores the exception, if raised by someFunction
         self.exc = None
         try:
-            self.run_steam_gifts(self.config, self.notification)
+            self._scheduler.start()
         except BaseException as e:
             self.exc = e
 
@@ -89,3 +94,25 @@ class GiveawayThread(threading.Thread):
         # if any was caught
         if self.exc:
             raise self.exc
+
+    class GiveawayRunner:
+
+        def __init__(self, wishlist_page, all_page, job_id):
+            self._wishlist_page = wishlist_page
+            self._all_page = all_page
+            self._job_id = job_id
+
+        def run(self):
+            logger.info("🟢 Evaluating giveaways.")
+            if self._wishlist_page:
+                self._wishlist_page.start()
+            if self._all_page:
+                self._all_page.start()
+            logger.info("🔴 All giveaways evaluated.")
+            scheduler = Scheduler()
+            evaluate_giveaway_job = scheduler.get_job(job_id=self._job_id)
+            if evaluate_giveaway_job:
+                when_to_start_again = evaluate_giveaway_job.next_run_time
+                logger.info(f"🛋 Going to sleep. Will start again at {when_to_start_again}")
+            else:
+                logger.info("No set time to evaluate giveaways again.")
