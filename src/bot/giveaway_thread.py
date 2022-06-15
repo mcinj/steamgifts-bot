@@ -50,12 +50,13 @@ class GiveawayThread(threading.Thread):
             sleep(10)
             exit(-1)
 
-        self._won_page_job_function = EvaluateWonGiveaways(cookie, user_agent, notification).start
         won_giveaway_job = self._scheduler.get_job(job_id=self.won_giveaway_job_id)
         if won_giveaway_job:
             logger.debug("Previous won giveaway evaluator job exists. Removing.")
             won_giveaway_job.remove()
-        self._scheduler.add_job(self._won_page_job_function,
+        won_runner = GiveawayThread.WonRunner(EvaluateWonGiveaways(cookie, user_agent, notification),
+                                              self.won_giveaway_job_id)
+        self._scheduler.add_job(won_runner.run,
                                 id=self.won_giveaway_job_id,
                                 trigger='interval',
                                 max_instances=1,
@@ -94,6 +95,24 @@ class GiveawayThread(threading.Thread):
         # if any was caught
         if self.exc:
             raise self.exc
+
+    class WonRunner:
+        def __init__(self, won_page, job_id):
+            self._won_page = won_page
+            self._job_id = job_id
+
+        def run(self):
+            logger.info(" 💍 Evaluating won giveaways. 💍")
+            if self._won_page:
+                self._won_page.start()
+            logger.info(" 💍 All won giveaways evaluated.  💍")
+            scheduler = Scheduler()
+            evaluate_giveaway_job = scheduler.get_job(job_id=self._job_id)
+            if evaluate_giveaway_job:
+                when_to_start_again = evaluate_giveaway_job.next_run_time
+                logger.info(f"💍 Going to sleep. Will start again at {when_to_start_again}")
+            else:
+                logger.info("No set time to evaluate won giveaways again.")
 
     class GiveawayRunner:
 

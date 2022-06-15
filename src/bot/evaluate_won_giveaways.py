@@ -75,7 +75,6 @@ class EvaluateWonGiveaways:
             txt = f"🟡 No won games to evaluate"
             logger.info(txt)
 
-        logger.info("Evaluating won giveaways")
         for item in won_game_list:
             won_giveaway = WonEntry(item)
             w = GiveawayHelper.get_by_giveaway_id(won_giveaway.giveaway_game_id)
